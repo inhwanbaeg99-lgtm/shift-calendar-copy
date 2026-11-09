@@ -101,3 +101,14 @@ input:focus-visible, button:focus-visible, a:focus-visible { outline-color: #FF0
 .m-pay-person h1 { margin: 0; font-size: 22px; overflow-wrap: anywhere; }
 .m-pay-person p { margin: 6px 0 0; font-size: 13px; color: var(--ink-sub); }
 .m-pay-detail > .sheet-head { display: none; }
+
+@media (max-width: 767px) {
+  .m-month .round-btn { background: transparent; border-color: transparent; box-shadow: none; }
+  .m-hero .m-tax, .m-payday select {
+    color: var(--ink); -webkit-text-fill-color: var(--ink);
+    background: #FFFFFF; border: 1px solid #b9ddfa;
+    opacity: 1; min-height: 44px; border-radius: 8px;
+  }
+  .m-hero .m-tax option { color: #18334b; background: #FFFFFF; }
+  .m-hero-meta, .m-payday { opacity: 1; }
+}
