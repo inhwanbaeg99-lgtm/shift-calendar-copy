@@ -210,3 +210,5 @@ input:focus-visible, button:focus-visible, a:focus-visible { outline-color: #FF0
 
 .date-morph-layer { position: fixed; inset: 0; z-index: 80; touch-action: none; }
 .date-morph-shape { position: fixed; display: flex; align-items: center; justify-content: center; background: #59B5FF; color: #18334b; font-family: inherit; font-size: 28px; font-weight: 650; line-height: 1; box-shadow: 0 8px 28px #59b5ff25; overflow: hidden; }
+
+.date-morph-number { pointer-events: none; z-index: 1; white-space: nowrap; }
