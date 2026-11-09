@@ -1291,7 +1291,6 @@ function renderRecordsMobile() {
   return renderAdminShell(
     "records",
     `
-    ${mHead("급여 확인")}
     ${payCheckNotice(month)}
     <div class="m-month">
       <button type="button" class="round-btn" data-action="payroll-prev" aria-label="이전 달">${ICON_PREV}</button>
@@ -2361,7 +2360,7 @@ function openSharePreview(file, onCopied) {
       <div class="share-actions">
         <button type="button" class="btn-ghost" data-share="close">닫기</button>
         <button type="button" class="btn-ghost" data-share="save">사진 저장</button>
-        ${canShare ? `<button type="button" class="btn-primary" data-share="send">카카오톡 전송하기</button>` : ""}
+        ${canShare ? `<button type="button" class="btn-primary" data-share="send">전송하기</button>` : ""}
         ${canCopy ? `<button type="button" class="btn-primary" data-share="copy">복사하기</button>` : ""}
       </div>
       ${canCopy ? `<p class="share-tip">복사한 뒤 카카오톡 채팅방에서 ${/Mac/.test(navigator.platform) ? "⌘V" : "Ctrl+V"} 로 붙여넣으면 사진으로 보내져요.</p>` : ""}

@@ -74,3 +74,20 @@ input:focus-visible, button:focus-visible, a:focus-visible { outline-color: #FF0
 .m-pay-exports button { min-width: 0; padding-inline: 8px; white-space: nowrap; }
 .m-pay-back { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 24px; color: var(--ink); text-decoration: none; }
 .m-pay-detail .sheet-actions { position: static; }
+
+/* 화면 상단으로 스크롤되는 콘텐츠를 배경색으로 부드럽게 가림 */
+.m-top::after {
+  content: ''; position: absolute; top: 100%; left: 0; right: 0; height: 24px;
+  background: linear-gradient(to bottom, var(--bg), #f4faff00);
+  pointer-events: none;
+}
+@media (min-width: 768px) {
+  body::before {
+    content: ''; position: fixed; inset: 0 0 auto; height: 24px; z-index: 25;
+    background: linear-gradient(to bottom, var(--bg), #f4faff00);
+    pointer-events: none;
+  }
+}
+/* 상세 페이지의 다운로드 영역도 본문 배경과 연결 */
+.m-pay-detail .sheet-actions { background: var(--bg); }
+.m-pay-detail .sheet-actions .btn-ghost { background: var(--bg); }
