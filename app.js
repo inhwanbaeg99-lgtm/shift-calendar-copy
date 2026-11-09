@@ -3284,6 +3284,7 @@ async function animateDateIntoDetails(date) {
   layer.setAttribute("aria-hidden", "true");
   const shape = document.createElement("div");
   shape.className = "date-morph-shape";
+  shape.style.background = date === todayDateString() ? "#59B5FF" : "#FFFFFF";
 
   layer.append(shape);
   document.body.append(layer);
