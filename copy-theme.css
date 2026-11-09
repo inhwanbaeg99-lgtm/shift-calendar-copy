@@ -131,3 +131,12 @@ input:focus-visible, button:focus-visible, a:focus-visible { outline-color: #FF0
   .m-screen-records .m-payday .dd:first-of-type .dd-btn { border-radius: 12px 4px 4px 12px; }
   .m-screen-records .m-payday .dd:last-child .dd-btn { border-radius: 4px 12px 12px 4px; }
 }
+
+.m-pay-detail .m-share { background: #FF05BF; border-color: #FF05BF; color: #FFFFFF; }
+.m-pay-detail .m-share:hover { background: #e900ad; }
+.m-employee-actions { display: flex; justify-content: flex-end; margin: 12px 0 16px; }
+.m-employee-detail .sheet-actions { position: static; background: var(--bg); }
+@media (max-width: 767px) {
+  .m-screen-calendar .staff-link { margin: 16px 0; padding: 14px; }
+  .m-screen-calendar .staff-link-url { overflow-wrap: anywhere; }
+}

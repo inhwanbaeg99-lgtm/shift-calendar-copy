@@ -902,7 +902,7 @@ function renderHome() {
 
 // 관리자 달력: 직원용 달력과 같은 화면. 출근 버튼은 없고 지난 날짜도 근무 시간을 고칠 수 있다.
 function renderAdminCalendar() {
-  return renderAdminShell("calendar", `${isDesktop() ? "" : mHead("출퇴근 확인") + renderTodayCard()}<div class="admin-cal">${renderCalendarCard()}</div>`, { center: true, wide: true });
+  return renderAdminShell("calendar", `${isDesktop() ? "" : mHead("출퇴근 확인") + renderTodayCard() + (demoLoaded ? "" : renderStaffLink())}<div class="admin-cal">${renderCalendarCard()}</div>`, { center: true, wide: true });
 }
 
 function renderDayPage(date) {
@@ -1118,7 +1118,7 @@ function renderEmployeesMobile() {
   const list = store.employees
     .map(
       (e, i) => `
-      <button type="button" class="m-row" style="--i:${i}" data-action="open-sheet" data-sheet="emp" data-id="${e.id}">
+      <button type="button" class="m-row" style="--i:${i}" data-action="open-employee-page" data-id="${e.id}">
         <span class="swatch big" style="background:${copyDisplayColor(e.color)}"></span>
         <span class="m-row-body">
           <b>${esc(e.name)}${isManager(e) ? `<em class="m-chip">직원</em>` : ""}${e.active ? "" : `<em class="m-chip off">비활성</em>`}</b>
@@ -1131,17 +1131,18 @@ function renderEmployeesMobile() {
   return renderAdminShell(
     "employees",
     `
-    ${mHead(`직원 <span class="m-count">${store.employees.length}명</span>`, `<button type="button" class="m-add" data-action="open-sheet" data-sheet="add-emp">+ 직원 추가</button>`)}
-    ${
-      demoLoaded
-        ? ""
-        : `<div class="m-card m-link">
-            <div><b>직원용 달력</b><small>매장 코드 ${codeLabel()}</small></div>
-            <button type="button" class="pill" data-action="copy-staff-link">주소 복사</button>
-          </div>`
-    }
+    <div class="m-employee-actions"><button type="button" class="m-add" data-action="open-sheet" data-sheet="add-emp">+ 직원 추가</button></div>
     <div class="m-list">${list || `<p class="m-empty">아직 직원이 없어요.<br />오른쪽 위 <b>+ 직원 추가</b>로 등록해주세요.</p>`}</div>`,
   );
+}
+
+function renderEmployeePage(id) {
+  const emp = employeeById(id);
+  if (!emp) return renderEmployees();
+  const content = renderEmpSheet(emp).replace('data-action="close-sheet"', 'data-action="employee-list"');
+  return renderAdminShell("employees", `
+    <a class="m-pay-back" href="#/employees" aria-label="직원 목록으로 돌아가기">${ICON_PREV}</a>
+    <section class="m-employee-detail">${content}</section>`);
 }
 
 function renderEmpSheet(e) {
@@ -3101,6 +3102,8 @@ function route() {
   const day = hash.match(/^\/day\/(\d{4}-\d{2}-\d{2})$/);
   if (day) return { name: "day", date: day[1] };
   if (!ADMIN_SITE) return { name: "home" };
+  const employee = hash.match(/^\/employees\/([^/]+)$/);
+  if (employee) return { name: "employee-detail", id: decodeURIComponent(employee[1]) };
   const pay = hash.match(/^\/records\/([^/]+)\/(\d{4}-(?:0[1-9]|1[0-2]))$/);
   if (pay) return { name: "pay-detail", id: decodeURIComponent(pay[1]), month: pay[2] };
   const page = { "/records": "records", "/schedule": "schedule", "/calendar": "calendar" }[hash];
@@ -3122,6 +3125,7 @@ function render() {
   else if (r.name === "day") app.innerHTML = renderDayPage(r.date);
   else if (r.name === "calendar") app.innerHTML = renderAdminCalendar();
   else if (r.name === "employees") app.innerHTML = renderEmployees();
+  else if (r.name === "employee-detail") app.innerHTML = renderEmployeePage(r.id);
   else if (r.name === "records") app.innerHTML = renderRecords();
   else if (r.name === "pay-detail") app.innerHTML = renderPayPage(r.id, r.month);
   else if (r.name === "schedule") app.innerHTML = renderSchedule();
@@ -3696,6 +3700,13 @@ app.addEventListener("click", (e) => {
       queueToast(isManager(emp) ? `${emp.name}님을 직원(월급제)로 바꿨어요. 급여 화면 명세서에서 월급을 입력해주세요` : `${emp.name}님을 알바(시급제)로 바꿨어요`);
       break;
     }
+    case "open-employee-page":
+      navigate(`#/employees/${encodeURIComponent(id)}`);
+      window.scrollTo(0, 0);
+      return;
+    case "employee-list":
+      navigate("#/employees");
+      return;
     case "open-pay-page":
       navigate(`#/records/${encodeURIComponent(id)}/${state.payroll.month}`);
       window.scrollTo(0, 0);
@@ -4056,7 +4067,7 @@ function renderInstallHint() {
 const DEMO_ALLOWED = new Set([
   "prev-month", "next-month", "close-panel", "go-home", "toggle-staff", "toggle-rec", "toggle-help",
   "payroll-prev", "payroll-next", "open-payslip", "close-payslip",
-  "open-pay-page", "open-sheet", "close-sheet", "sched-day", "open-today", "install-app", "dismiss-install", "start-tour", "toggle-mobile-menu",
+  "open-employee-page", "employee-list", "open-pay-page", "open-sheet", "close-sheet", "sched-day", "open-today", "install-app", "dismiss-install", "start-tour", "toggle-mobile-menu",
 ]);
 
 let toastTimer = null;
