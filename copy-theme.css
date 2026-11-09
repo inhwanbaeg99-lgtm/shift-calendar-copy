@@ -17,7 +17,7 @@
   --shadow: 0 2px 5px #59b5ff08, 0 8px 28px #59b5ff10;
 }
 body { background: var(--bg); }
-.admin-top, .m-top { background: #FFFFFF; border-bottom-color: var(--line); }
+.admin-top, .m-top { background: var(--bg); border-bottom-color: transparent; }
 .admin-top a.active, .m-tab.active, .m-day.on { color: var(--ink); }
 .admin-top .nav-pill { background: linear-gradient(110deg,#59b5ff30,#ff05bf12); }
 .btn-primary, .pill:not(.plain):not(.plain-dark), .m-add, .m-day.on, .m-menu-toggle, .m-bubble-nav .m-tab.active { color: #18334b; }
