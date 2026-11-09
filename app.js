@@ -971,7 +971,7 @@ function renderEmployees() {
     .map(
       (e, i) => `
       <tr style="--i:${i}">
-        <td class="name"><div class="name-info"><span class="name-cell"><span class="swatch" style="background:${cssColor(e.color)}" title="근무표 색 (자동)"></span>${nameLabel(e)}</span><span class="muted small">${esc(e.phone ? formatPhone(e.phone) : "")}</span></div></td>
+        <td class="name"><div class="name-info"><span class="name-cell"><span class="swatch" style="background:${copyDisplayColor(e.color)}" title="근무표 색 (자동)"></span>${nameLabel(e)}</span><span class="muted small">${esc(e.phone ? formatPhone(e.phone) : "")}</span></div></td>
         ${order
           .map(
             (wd) =>
@@ -1119,7 +1119,7 @@ function renderEmployeesMobile() {
     .map(
       (e, i) => `
       <button type="button" class="m-row" style="--i:${i}" data-action="open-sheet" data-sheet="emp" data-id="${e.id}">
-        <span class="swatch big" style="background:${cssColor(e.color)}"></span>
+        <span class="swatch big" style="background:${copyDisplayColor(e.color)}"></span>
         <span class="m-row-body">
           <b>${esc(e.name)}${isManager(e) ? `<em class="m-chip">직원</em>` : ""}${e.active ? "" : `<em class="m-chip off">비활성</em>`}</b>
           <small>${esc(weeklySummary(e))}</small>
@@ -1148,7 +1148,7 @@ function renderEmpSheet(e) {
   const order = [1, 2, 3, 4, 5, 6, 0];
   return `
     <div class="sheet-head">
-      <span class="swatch big" style="background:${cssColor(e.color)}"></span>
+      <span class="swatch big" style="background:${copyDisplayColor(e.color)}"></span>
       <div><h2>${esc(e.name)}</h2>${e.phone ? `<small>${esc(formatPhone(e.phone))}</small>` : ""}</div>
     </div>
     <p class="sheet-label">요일별 근무 시간 <small>7-12, 18-2230 처럼 입력 · 비우면 쉬는 날</small></p>
@@ -1221,7 +1221,7 @@ function renderDayShifts() {
     .map(({ e, shift }, i) => {
       const hours = hoursBetween(kstIso("2026-01-05", shift.start), endIso("2026-01-05", shift.start, shift.end));
       return `
-        <button type="button" class="m-shift" style="--i:${i};--emp:${cssColor(e.color)}" data-action="edit-slot" data-wd="${wd}" data-id="${e.id}" data-start="${toMin(shift.start)}">
+        <button type="button" class="m-shift" style="--i:${i};--emp:${copyDisplayColor(e.color)}" data-action="edit-slot" data-wd="${wd}" data-id="${e.id}" data-start="${toMin(shift.start)}">
           <span class="m-shift-bar"></span>
           <span class="m-shift-body"><b>${esc(e.name)}${isManager(e) ? `<em class="m-chip">직원</em>` : ""}</b><small>${shift.start} ~ ${shift.end}</small></span>
           <span class="m-shift-hours">${hour1(hours)}시간</span>
@@ -1281,7 +1281,7 @@ function renderRecordsMobile() {
     .map(
       (r, i) => `
       <button type="button" class="m-row m-pay" style="--i:${i}" data-action="open-sheet" data-sheet="pay" data-id="${r.emp.id}">
-        <span class="swatch big" style="background:${cssColor(r.emp.color)}"></span>
+        <span class="swatch big" style="background:${copyDisplayColor(r.emp.color)}"></span>
         <span class="m-row-body"><b>${esc(r.emp.name)}</b><small>${r.days}일 · ${hrs(r.hours)}</small></span>
         <span class="m-pay-net net">${r.net === null ? `<small class="need">공제 입력 필요</small>` : won(r.net)}</span>
         <span class="m-chev">${ICON_CHEVRON}</span>
@@ -1337,7 +1337,7 @@ function renderPaySheet(emp) {
     .join("");
   return `
     <div class="sheet-head">
-      <span class="swatch big" style="background:${cssColor(emp.color)}"></span>
+      <span class="swatch big" style="background:${copyDisplayColor(emp.color)}"></span>
       <div><h2>${esc(emp.name)}</h2><small>${Number(month.slice(5, 7))}월 · ${r.days}일 · ${hrs(r.hours)}</small></div>
     </div>
     <div class="m-hero small"><small>받을 금액</small><strong>${r.net === null ? "공제액 입력 필요" : won(r.net)}</strong></div>
@@ -2512,7 +2512,7 @@ function renderScheduleSheet({ wide = false, share = false } = {}) {
         .join("");
       const bars = items
         .map((it) => {
-          const bg = cssColor(it.e.color);
+          const bg = copyDisplayColor(it.e.color);
           const editing = ed && String(ed.wd) === String(wd) && (ed.empId ?? ed.addEmpId) === it.e.id;
           const h = ((it.end - it.start) / 60) * H;
           const w = 100 / lanes;
@@ -3997,7 +3997,7 @@ function renderTodayCard() {
           people
             .map((e) => {
               const { start, end } = shiftFor(e, today);
-              return `<span class="m-pp${done(e) ? " on" : ""}"><i style="background:${cssColor(e.color)}"></i>${nameLabel(e)}<small>${noTimeShift(e, today) ? "대타" : `${shortTime(start)}~${shortTime(end)}`}</small></span>`;
+              return `<span class="m-pp${done(e) ? " on" : ""}"><i style="background:${copyDisplayColor(e.color)}"></i>${nameLabel(e)}<small>${noTimeShift(e, today) ? "대타" : `${shortTime(start)}~${shortTime(end)}`}</small></span>`;
             })
             .join("") || `<span class="m-pp-empty">오늘 근무자가 없어요</span>`
         }
@@ -4487,6 +4487,24 @@ function flattenRemote() {
 function safeId(v) {
   return typeof v === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(v);
 }
+// 복사본 표시색만 변환: 공유 데이터에 저장된 직원 색은 변경하지 않는다.
+function copyDisplayColor(value) {
+  const color = cssColor(value);
+  const hsl = color.match(/^hsl\((\d+) (\d+)% (\d+)%\)$/);
+  if (hsl) return +hsl[1] >= 234 && +hsl[1] <= 314 ? "#FF05BF" : color;
+  let hex = color.slice(1);
+  if (!color.startsWith("#")) return color;
+  if (hex.length === 3 || hex.length === 4) hex = hex.split("").map(x => x + x).join("");
+  const [r,g,b] = [0,2,4].map(i => parseInt(hex.slice(i,i+2),16)/255);
+  const max=Math.max(r,g,b), min=Math.min(r,g,b), delta=max-min;
+  if (!delta) return color;
+  let hue = max === r ? ((g-b)/delta)%6 : max === g ? (b-r)/delta+2 : (r-g)/delta+4;
+  hue=(hue*60+360)%360;
+  if (hue < 234 || hue > 314) return color;
+  const light=(max+min)/2;
+  return light > .85 ? "#FFE0F7" : light > .65 ? "#FF9DE6" : "#FF05BF";
+}
+
 function cssColor(v) {
   return typeof v === "string" && /^(#[0-9a-fA-F]{3,8}|hsl\(\d{1,3} \d{1,3}% \d{1,3}%\))$/.test(v) ? v : "#ffffff";
 }
