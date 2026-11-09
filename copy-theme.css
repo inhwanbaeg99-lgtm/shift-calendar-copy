@@ -161,3 +161,14 @@ input:focus-visible, button:focus-visible, a:focus-visible { outline-color: #FF0
 .m-employee-detail .m-wage input { flex: 0 1 110px; width: 110px; height: 42px; padding: 8px 10px; font-size: 16px; }
 .m-employee-detail .m-wage > span { font-size: 14px; font-weight: 500; }
 .m-employee-detail .m-wage .m-toggle { margin-left: auto; }
+
+/* 직원 상세는 중앙 축을 기준으로 정렬 */
+.m-employee-detail { max-width: 480px; margin-inline: auto; }
+.m-employee-detail .m-week { max-width: 360px; margin-inline: auto; }
+.m-employee-detail .m-wage { justify-content: center; flex-wrap: nowrap; gap: 8px; }
+.m-employee-detail .m-wage input { flex: 0 1 100px; width: 100px; }
+.m-employee-detail .m-wage .m-toggle { margin-left: 0; }
+.m-employee-detail .m-toggle { background: #FFFFFF; border: 1px solid var(--line); border-radius: 12px; }
+.m-employee-detail .m-toggle.on { background: var(--accent-soft); border-color: #b9ddfa; }
+.m-employee-detail .m-toggles { max-width: 360px; margin-inline: auto; }
+.m-employee-detail .employee-change-icon { fill: currentColor; stroke: none; }

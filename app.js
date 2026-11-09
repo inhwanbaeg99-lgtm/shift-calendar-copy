@@ -1131,7 +1131,7 @@ function renderEmployeesMobile() {
   return renderAdminShell(
     "employees",
     `
-    <div class="m-head m-employee-actions"><h1>직원 <span class="m-count">${store.employees.length}명</span></h1><button type="button" class="m-add" data-action="open-sheet" data-sheet="add-emp">+ 직원 추가</button></div>
+    <div class="m-head m-employee-actions"><h1>직원 · <span class="m-count">${store.employees.length}명</span></h1><button type="button" class="m-add" data-action="open-sheet" data-sheet="add-emp">+ 직원 추가</button></div>
     <div class="m-list">${list || `<p class="m-empty">아직 직원이 없어요.<br />오른쪽 위 <b>+ 직원 추가</b>로 등록해주세요.</p>`}</div>`,
   );
 }
@@ -1152,14 +1152,13 @@ function renderEmployeePage(id) {
 
 function renderEmpSheet(e) {
   const order = [1, 2, 3, 4, 5, 6, 0];
-  const changeIcon = svg(16, '<path d="M20 7v5h-5M4 17v-5h5M6.1 7a7 7 0 0 1 11.6-2L20 8M4 16l2.3 3A7 7 0 0 0 17.9 17"/>', 1.8);
+  const changeIcon = '<svg class="employee-change-icon" width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9 2a8 8 0 0 0 0 16h1.3A11 11 0 0 1 7 10H4l5-5 5 5h-3a8 8 0 0 0 8 8 8 8 0 0 0 0-16h-1.3A11 11 0 0 1 21 10h3l-5 5-5-5h3a8 8 0 0 0-8-8Z" transform="translate(0 2) scale(.92)"/></svg>';
   const payToggle = `<button type="button" class="m-toggle${isSalaried(e) ? " on" : ""}" data-action="toggle-paytype" data-id="${e.id}" aria-label="급여 방식 변경: 현재 ${isSalaried(e) ? "월급제" : "시급제"}">${isSalaried(e) ? "월급제" : "시급제"}${changeIcon}</button>`;
   return `
     <div class="sheet-head">
       <span class="swatch big" style="background:${copyDisplayColor(e.color)}"></span>
       <div><h2>${esc(e.name)}</h2>${e.phone ? `<small>${esc(formatPhone(e.phone))}</small>` : ""}</div>
     </div>
-    <p class="sheet-label">요일별 근무 시간</p>
     <div class="m-week">
       ${order
         .map(
