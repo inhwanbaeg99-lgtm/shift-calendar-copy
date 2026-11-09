@@ -112,3 +112,22 @@ input:focus-visible, button:focus-visible, a:focus-visible { outline-color: #FF0
   .m-hero .m-tax option { color: #18334b; background: #FFFFFF; }
   .m-hero-meta, .m-payday { opacity: 1; }
 }
+
+/* 급여 선택란은 데스크톱과 같은 드롭다운 사용 */
+@media (max-width: 767px) {
+  .m-screen-records .dd > select.m-tax {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    opacity: 0; pointer-events: none; min-height: 0;
+  }
+  .m-screen-records .m-hero { padding: 16px 18px; }
+  .m-screen-records .dd-btn { min-height: 36px; padding: 7px 10px; font-size: 13px; }
+  .m-screen-records .m-payday { margin-top: 8px; }
+  .m-screen-records .m-payday > span { margin-right: auto; }
+  .m-screen-records .m-payday .dd-btn span { margin-right: 0; }
+  .m-screen-records .m-payday .dd-btn {
+    background: var(--accent-soft); color: var(--accent-press); font-weight: 700;
+  }
+  .m-screen-records .m-payday .dd-btn svg { color: inherit; }
+  .m-screen-records .m-payday .dd:first-of-type .dd-btn { border-radius: 12px 4px 4px 12px; }
+  .m-screen-records .m-payday .dd:last-child .dd-btn { border-radius: 4px 12px 12px 4px; }
+}

@@ -3179,8 +3179,8 @@ function render() {
 // 고르면 select 값을 바꾸고 change 를 내보내므로 저장 처리는 원래 코드 그대로다. 휴대폰은 기본 선택창을 쓴다.
 const DD_CHEVRON = svg(14, '<path d="m6 9 6 6 6-6"/>', 2.5);
 function enhanceSelects() {
-  if (!isDesktop()) return;
-  for (const sel of app.querySelectorAll("select.field")) {
+  const selector = isDesktop() ? "select.field" : ".m-screen-records select.m-tax";
+  for (const sel of app.querySelectorAll(selector)) {
     const dd = document.createElement("div");
     dd.className = "dd";
     sel.before(dd);
