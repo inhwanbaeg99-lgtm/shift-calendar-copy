@@ -902,7 +902,7 @@ function renderHome() {
 
 // 관리자 달력: 직원용 달력과 같은 화면. 출근 버튼은 없고 지난 날짜도 근무 시간을 고칠 수 있다.
 function renderAdminCalendar() {
-  return renderAdminShell("calendar", `${isDesktop() ? "" : mHead("출퇴근 확인") + renderTodayCard() + (demoLoaded ? "" : renderStaffLink())}<div class="admin-cal">${renderCalendarCard()}</div>`, { center: true, wide: true });
+  return renderAdminShell("calendar", `<div class="admin-cal">${renderCalendarCard()}</div>`, { center: true, wide: true });
 }
 
 function renderDayPage(date) {
@@ -1132,6 +1132,7 @@ function renderEmployeesMobile() {
     "employees",
     `
     <div class="m-head m-employee-actions"><h1>직원 · <span class="m-count">${store.employees.length}명</span></h1><button type="button" class="m-add" data-action="open-sheet" data-sheet="add-emp">+ 직원 추가</button></div>
+    ${demoLoaded ? "" : renderStaffLink()}
     <div class="m-list">${list || `<p class="m-empty">아직 직원이 없어요.<br />오른쪽 위 <b>+ 직원 추가</b>로 등록해주세요.</p>`}</div>`,
   );
 }

@@ -172,3 +172,18 @@ input:focus-visible, button:focus-visible, a:focus-visible { outline-color: #FF0
 .m-employee-detail .m-toggle.on { background: var(--accent-soft); border-color: #b9ddfa; }
 .m-employee-detail .m-toggles { max-width: 360px; margin-inline: auto; }
 .m-employee-detail .employee-change-icon { fill: currentColor; stroke: none; }
+
+/* 모바일 출퇴근 달력: 카드 없이 화면을 넓게 사용 */
+@media (max-width: 767px) {
+  button.m-today { display: none !important; }
+  .m-screen-calendar { padding-inline: 8px; }
+  .m-screen-calendar .admin-cal .card { background: transparent; border: 0; border-radius: 0; box-shadow: none; }
+  .m-screen-calendar .cal-wrap { padding: 12px 0 0; }
+  .m-screen-calendar .cal-head { margin: 0 8px 22px; }
+  .m-screen-calendar .grid { height: max(390px, calc(100svh - 250px)); row-gap: 6px; }
+  .m-screen-calendar .cell { justify-content: flex-start; padding-top: 12px; border-radius: 12px; }
+  .m-screen-calendar .grid.six-weeks .cell { padding-top: 8px; }
+  .m-screen-calendar .weekday { padding-bottom: 10px; }
+  .m-screen-employees .staff-link { margin: 12px 0 16px; padding: 14px; }
+  .m-screen-employees .staff-link-url { overflow-wrap: anywhere; }
+}
