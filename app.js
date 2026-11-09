@@ -1322,9 +1322,15 @@ function renderPayPage(id, month) {
   const emp = employeeById(id);
   if (!emp) return renderRecords();
   state.payroll.month = month;
+  const summary = payrollRow(emp, month, monthRecords(month, emp.id));
   return renderAdminShell("records", `
-    <a class="m-pay-back" href="#/records">${ICON_PREV}<span>급여 목록</span></a>
-    <section class="m-pay-detail" aria-label="직원 급여 상세">${renderPaySheet(emp)}</section>
+    <section class="m-pay-detail" aria-label="직원 급여 상세">
+      <div class="m-pay-detail-heading">
+        <a class="m-pay-back" href="#/records" aria-label="급여 목록으로 돌아가기">${ICON_PREV}</a>
+        <div class="m-pay-person"><h1>${esc(emp.name)}</h1><p>${Number(month.slice(5, 7))}월 · ${summary.days}일 · ${hrs(summary.hours)}</p></div>
+      </div>
+      ${renderPaySheet(emp)}
+    </section>
     ${renderPayslipModal()}`);
 }
 

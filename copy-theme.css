@@ -91,3 +91,13 @@ input:focus-visible, button:focus-visible, a:focus-visible { outline-color: #FF0
 /* 상세 페이지의 다운로드 영역도 본문 배경과 연결 */
 .m-pay-detail .sheet-actions { background: var(--bg); }
 .m-pay-detail .sheet-actions .btn-ghost { background: var(--bg); }
+
+@media (max-width: 767px) {
+  .m-staff-shortcut, .m-staff-link { display: none !important; }
+}
+.m-pay-detail-heading { position: relative; display: grid; grid-template-columns: 44px minmax(0,1fr) 44px; align-items: center; margin: 12px 0 24px; }
+.m-pay-detail-heading .m-pay-back { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; margin: 0; }
+.m-pay-person { min-width: 0; text-align: center; }
+.m-pay-person h1 { margin: 0; font-size: 22px; overflow-wrap: anywhere; }
+.m-pay-person p { margin: 6px 0 0; font-size: 13px; color: var(--ink-sub); }
+.m-pay-detail > .sheet-head { display: none; }
