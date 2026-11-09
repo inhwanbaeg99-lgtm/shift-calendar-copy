@@ -3272,6 +3272,48 @@ function navigate(hash) {
   else location.hash = hash;
 }
 
+// 날짜 원 이동 → 상세 박스로 확장 → 내용 표시의 3단계 전환
+async function animateDateIntoDetails(date) {
+  const source = app.querySelector(`[data-date="${date}"] .day-num`);
+  if (!source) { render(); return; }
+  const from = source.getBoundingClientRect();
+  const layer = document.createElement("div");
+  layer.className = "date-morph-layer";
+  layer.setAttribute("aria-hidden", "true");
+  const shape = document.createElement("div");
+  shape.className = "date-morph-shape";
+  shape.textContent = String(Number(date.slice(-2)));
+  layer.append(shape);
+  document.body.append(layer);
+  state.pageEnter = false;
+  render();
+  const box = app.querySelector(".day-page .day-area-inner");
+  const label = app.querySelector(".day-page .date-box-day");
+  if (!box || !label) { layer.remove(); return; }
+  const content = Array.from(box.children);
+  box.style.opacity = "0";
+  content.forEach(el => el.style.opacity = "0");
+  const to = label.getBoundingClientRect(), rect = box.getBoundingClientRect();
+  const size = 64;
+  const origin = {left:`${from.left}px`,top:`${from.top}px`,width:`${from.width}px`,height:`${from.height}px`,borderRadius:"50%"};
+  const circle = {left:`${to.left + to.width/2 - size/2}px`,top:`${to.top + to.height/2 - size/2}px`,width:`${size}px`,height:`${size}px`,borderRadius:"50%"};
+  Object.assign(shape.style, origin);
+  try {
+    await shape.animate([origin,circle], {duration:420,easing:"cubic-bezier(.22,.75,.2,1)",fill:"forwards"}).finished;
+    if (!box.isConnected) return;
+    shape.textContent = "";
+    await shape.animate([circle,{left:`${rect.left}px`,top:`${rect.top}px`,width:`${rect.width}px`,height:`${rect.height}px`,borderRadius:"20px",background:"#FFFFFF"}],{duration:380,easing:"cubic-bezier(.22,.75,.2,1)",fill:"forwards"}).finished;
+    box.style.opacity = "1";
+    const fades = content.map((el,i) => el.animate([{opacity:0,transform:"translateY(8px)"},{opacity:1,transform:"translateY(0)"}],{duration:260,delay:i*55,easing:"ease-out",fill:"forwards"}));
+    shape.style.visibility = "hidden";
+    await Promise.all(fades.map(a => a.finished));
+  } finally {
+    box.style.removeProperty("opacity");
+    content.forEach(el => el.style.removeProperty("opacity"));
+    layer.remove();
+  }
+}
+
 window.addEventListener("hashchange", () => {
   const wasDay = !!app.querySelector(".day-page");
   const nextPage = route().name;
@@ -3285,7 +3327,9 @@ window.addEventListener("hashchange", () => {
   state.allowDraft = null;
   state.slotEdit = null;
   state.helpOpen = {};
-  if (smoothDay && document.startViewTransition) {
+  if (smoothDay && !wasDay) {
+    animateDateIntoDetails(route().date);
+  } else if (smoothDay && document.startViewTransition) {
     document.documentElement.dataset.dayTransition = wasDay ? "back" : "forward";
     state.pageEnter = false;
     const date = wasDay ? app.querySelector(".day-page").dataset.detailDate : route().date;
