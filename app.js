@@ -3290,6 +3290,7 @@ async function animateDateIntoDetails(date) {
   layer.append(shape);
   document.body.append(layer);
   state.pageEnter = false;
+  state.dayEnter = false;
   render();
   const box = app.querySelector(".day-page .day-area-inner");
   const label = app.querySelector(".day-page .date-box-day");
@@ -3297,19 +3298,23 @@ async function animateDateIntoDetails(date) {
   const content = Array.from(box.children);
   box.style.opacity = "0";
   content.forEach(el => el.style.opacity = "0");
+  // 글자 폭과 블록 폭은 다르다. 원의 목적지는 숫자 글리프 중심으로 계산한다.
   const to = label.getBoundingClientRect(), rect = box.getBoundingClientRect();
+  const range = document.createRange();
+  range.selectNodeContents(label);
+  const glyph = range.getBoundingClientRect();
   const targetStyle = getComputedStyle(label);
   const number = label.cloneNode(true);
   number.className = "date-morph-number";
-  Object.assign(number.style, {position:"fixed",margin:"0",fontFamily:targetStyle.fontFamily,textAlign:targetStyle.textAlign});
+  Object.assign(number.style, {position:"fixed",margin:"0",fontFamily:targetStyle.fontFamily,textAlign:"center",display:"flex",alignItems:"center",justifyContent:"center",padding:"0",border:"0"});
   const textStart = {left:`${from.left}px`,top:`${from.top}px`,width:`${from.width}px`,height:`${from.height}px`,...startFont};
-  const textEnd = {left:`${to.left}px`,top:`${to.top}px`,width:`${to.width}px`,height:`${to.height}px`,fontSize:targetStyle.fontSize,fontWeight:targetStyle.fontWeight,lineHeight:targetStyle.lineHeight,letterSpacing:targetStyle.letterSpacing,color:targetStyle.color};
+  const textEnd = {left:`${glyph.left}px`,top:`${to.top}px`,width:`${glyph.width}px`,height:`${to.height}px`,fontSize:targetStyle.fontSize,fontWeight:targetStyle.fontWeight,lineHeight:targetStyle.lineHeight,letterSpacing:targetStyle.letterSpacing,color:targetStyle.color};
   Object.assign(number.style,textStart);
   layer.append(number);
   label.style.visibility = "hidden";
   const size = 64;
   const origin = {left:`${from.left}px`,top:`${from.top}px`,width:`${from.width}px`,height:`${from.height}px`,borderRadius:"50%"};
-  const circle = {left:`${to.left + to.width/2 - size/2}px`,top:`${to.top + to.height/2 - size/2}px`,width:`${size}px`,height:`${size}px`,borderRadius:"50%"};
+  const circle = {left:`${glyph.left + glyph.width/2 - size/2}px`,top:`${to.top + to.height/2 - size/2}px`,width:`${size}px`,height:`${size}px`,borderRadius:"50%"};
   Object.assign(shape.style, origin);
   try {
     const numberMove = number.animate([textStart,textEnd], {duration:420,easing:"cubic-bezier(.22,.75,.2,1)",fill:"forwards"});
@@ -3317,7 +3322,7 @@ async function animateDateIntoDetails(date) {
     if (!box.isConnected) return;
     await shape.animate([circle,{left:`${rect.left}px`,top:`${rect.top}px`,width:`${rect.width}px`,height:`${rect.height}px`,borderRadius:"20px",background:"#FFFFFF"}],{duration:380,easing:"cubic-bezier(.22,.75,.2,1)",fill:"forwards"}).finished;
     box.style.opacity = "1";
-    const fades = content.map((el,i) => el.animate([{opacity:0,transform:"translateY(8px)"},{opacity:1,transform:"translateY(0)"}],{duration:260,delay:i*55,easing:"ease-out",fill:"forwards"}));
+    const fades = content.map((el,i) => el.animate([{opacity:0},{opacity:1}],{duration:260,delay:i*55,easing:"ease-out",fill:"forwards"}));
     shape.style.visibility = "hidden";
     await Promise.all(fades.map(a => a.finished));
   } finally {
