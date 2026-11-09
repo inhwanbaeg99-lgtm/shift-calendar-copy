@@ -662,9 +662,8 @@ function sixWeekChips() {
   return Math.max(1, Math.floor((cell - 38) / 14.64) - 1);
 }
 
-function renderCalendar(period = state) {
-  const { year, month } = period;
-  const { selectedDate } = state;
+function renderCalendar() {
+  const { year, month, selectedDate } = state;
   const today = todayDateString();
   const startWeekday = new Date(year, month - 1, 1).getDay();
   const daysInMonth = new Date(year, month, 0).getDate();
@@ -902,35 +901,8 @@ function renderHome() {
 }
 
 // 관리자 달력: 직원용 달력과 같은 화면. 출근 버튼은 없고 지난 날짜도 근무 시간을 고칠 수 있다.
-function calendarMonthHtml(offset) {
-  const d = new Date(state.year, state.month - 1 + offset, 1);
-  return `<section class="scroll-calendar-month" data-month-offset="${offset}" aria-label="${d.getFullYear()}년 ${d.getMonth() + 1}월">${renderCalendar({year:d.getFullYear(), month:d.getMonth()+1})}</section>`;
-}
 function renderAdminCalendar() {
-  if (isDesktop()) return renderAdminShell("calendar", `<div class="admin-cal">${renderCalendarCard()}</div>`, { center: true, wide: true });
-  return renderAdminShell("calendar", `<div class="scroll-calendar"><div data-calendar-edge="before"></div><div class="scroll-calendar-months">${[-1,0,1,2].map(calendarMonthHtml).join("")}</div><div data-calendar-edge="after"></div></div>`);
-}
-let calendarScrollObserver = null;
-function setupScrollCalendar() {
-  calendarScrollObserver?.disconnect();
-  const root = app.querySelector(".scroll-calendar");
-  if (!root) return;
-  root.querySelector('[data-month-offset="0"]').scrollIntoView({block:"start"});
-  if (!window.IntersectionObserver) return;
-  let first = -1, last = 2;
-  const months = root.querySelector(".scroll-calendar-months");
-  calendarScrollObserver = new IntersectionObserver(entries => {
-    for (const entry of entries) {
-      if (!entry.isIntersecting) continue;
-      if (entry.target.dataset.calendarEdge === "before") {
-        const anchor = months.firstElementChild;
-        const before = anchor.getBoundingClientRect().top;
-        months.insertAdjacentHTML("afterbegin", calendarMonthHtml(--first));
-        window.scrollBy(0, anchor.getBoundingClientRect().top - before);
-      } else months.insertAdjacentHTML("beforeend", calendarMonthHtml(++last));
-    }
-  }, {rootMargin:"250px 0px"});
-  root.querySelectorAll("[data-calendar-edge]").forEach(el => calendarScrollObserver.observe(el));
+  return renderAdminShell("calendar", `<div class="admin-cal">${renderCalendarCard()}</div>`, { center: true, wide: true });
 }
 
 function renderDayPage(date) {
@@ -3171,7 +3143,6 @@ function render() {
 
   const period = document.querySelector(".sc-period");
   if (period) fitPeriod(period);
-  setupScrollCalendar();
   lockDemoFields();
   enhanceSelects();
   placeNavPill();
