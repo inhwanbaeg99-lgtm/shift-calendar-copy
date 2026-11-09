@@ -1280,7 +1280,7 @@ function renderRecordsMobile() {
   const cards = rows
     .map(
       (r, i) => `
-      <button type="button" class="m-row m-pay" style="--i:${i}" data-action="open-sheet" data-sheet="pay" data-id="${r.emp.id}">
+      <button type="button" class="m-row m-pay" style="--i:${i}" data-action="open-pay-page" data-id="${r.emp.id}">
         <span class="swatch big" style="background:${copyDisplayColor(r.emp.color)}"></span>
         <span class="m-row-body"><b>${esc(r.emp.name)}</b><small>${r.days}일 · ${hrs(r.hours)}</small></span>
         <span class="m-pay-net net">${r.net === null ? `<small class="need">공제 입력 필요</small>` : won(r.net)}</span>
@@ -1292,7 +1292,6 @@ function renderRecordsMobile() {
     "records",
     `
     ${mHead("급여 확인")}
-    <p class="m-page-intro">월을 고른 뒤 직원을 누르면 급여 내역이 열려요.</p>
     ${payCheckNotice(month)}
     <div class="m-month">
       <button type="button" class="round-btn" data-action="payroll-prev" aria-label="이전 달">${ICON_PREV}</button>
@@ -1312,16 +1311,22 @@ function renderRecordsMobile() {
       <div class="m-payday"><span>급여 지급일</span>${payDaySelects("m-tax")}</div>
     </div>
     <div class="m-list">${cards || `<p class="m-empty">이 달의 근무 기록이 없어요.</p>`}</div>
-    <details class="m-fold">
-      <summary>날짜별 근무 시간 표</summary>
-      ${renderTimesheet(month, "")}
-    </details>
-    <div class="m-btns">
+    <div class="m-btns m-pay-exports">
       <button type="button" class="btn-ghost" data-action="export-ledger"${rows.length ? "" : " disabled"}>엑셀 파일</button>
-      <button type="button" class="btn-primary" data-action="payslip-pdf-all"${rows.length ? "" : " disabled"}>명세서 PDF 전체</button>
+      <button type="button" class="btn-primary" data-action="payslip-pdf-all"${rows.length ? "" : " disabled"}>명세서 PDF</button>
     </div>
     ${renderPayslipModal()}`,
   );
+}
+
+function renderPayPage(id, month) {
+  const emp = employeeById(id);
+  if (!emp) return renderRecords();
+  state.payroll.month = month;
+  return renderAdminShell("records", `
+    <a class="m-pay-back" href="#/records">${ICON_PREV}<span>급여 목록</span></a>
+    <section class="m-pay-detail" aria-label="직원 급여 상세">${renderPaySheet(emp)}</section>
+    ${renderPayslipModal()}`);
 }
 
 function renderPaySheet(emp) {
@@ -2847,7 +2852,6 @@ const TOURS = {
           { scene: "paySheet", sel: ".sheet .sheet-actions", title: "수당 · 명세서 / 명세서 PDF", text: "<b>수당 · 명세서</b>에서 수당(직원은 월급·공제액)을 넣고, <b>명세서 PDF</b>로 명세서를 받아요." },
           { scene: "payslipAlba", sel: ".ps-allow", title: "알바 명세서 · 수당 입력", text: "특근수당 같은 수당을 이름과 금액으로 넣고 <b>저장</b>해요." },
           { scene: "payslipMgr", sel: ".sal-box", title: "직원 명세서 · 월급 · 공제액", text: "직원은 기본급·식대와 세무사에게 받은 공제액을 넣어요. 한 번 넣으면 다음 달에도 그대로 이어져요." },
-          { sel: ".m-fold > summary", title: "날짜별 근무 시간", text: "전체 직원의 날짜별 근무 시간 표예요." },
           { sel: ".m-btns [data-action=export-ledger]", title: "엑셀 파일", text: "세무사에게 보낼 급여대장이에요." },
           { sel: ".m-btns [data-action=payslip-pdf-all]", title: "명세서 PDF 전체", text: "직원마다 따로 급여명세서 PDF를 받아요." },
         ],
@@ -3092,6 +3096,8 @@ function route() {
   const day = hash.match(/^\/day\/(\d{4}-\d{2}-\d{2})$/);
   if (day) return { name: "day", date: day[1] };
   if (!ADMIN_SITE) return { name: "home" };
+  const pay = hash.match(/^\/records\/([^/]+)\/(\d{4}-(?:0[1-9]|1[0-2]))$/);
+  if (pay) return { name: "pay-detail", id: decodeURIComponent(pay[1]), month: pay[2] };
   const page = { "/records": "records", "/schedule": "schedule", "/calendar": "calendar" }[hash];
   return { name: page ?? "employees" };
 }
@@ -3112,6 +3118,7 @@ function render() {
   else if (r.name === "calendar") app.innerHTML = renderAdminCalendar();
   else if (r.name === "employees") app.innerHTML = renderEmployees();
   else if (r.name === "records") app.innerHTML = renderRecords();
+  else if (r.name === "pay-detail") app.innerHTML = renderPayPage(r.id, r.month);
   else if (r.name === "schedule") app.innerHTML = renderSchedule();
   else app.innerHTML = renderHome();
 
@@ -3684,6 +3691,10 @@ app.addEventListener("click", (e) => {
       queueToast(isManager(emp) ? `${emp.name}님을 직원(월급제)로 바꿨어요. 급여 화면 명세서에서 월급을 입력해주세요` : `${emp.name}님을 알바(시급제)로 바꿨어요`);
       break;
     }
+    case "open-pay-page":
+      navigate(`#/records/${encodeURIComponent(id)}/${state.payroll.month}`);
+      window.scrollTo(0, 0);
+      return;
     case "open-sheet":
       state.sheet = { type: el.dataset.sheet, id: id ?? null };
       state.sheetEnter = true;
@@ -4040,7 +4051,7 @@ function renderInstallHint() {
 const DEMO_ALLOWED = new Set([
   "prev-month", "next-month", "close-panel", "go-home", "toggle-staff", "toggle-rec", "toggle-help",
   "payroll-prev", "payroll-next", "open-payslip", "close-payslip",
-  "open-sheet", "close-sheet", "sched-day", "open-today", "install-app", "dismiss-install", "start-tour", "toggle-mobile-menu",
+  "open-pay-page", "open-sheet", "close-sheet", "sched-day", "open-today", "install-app", "dismiss-install", "start-tour", "toggle-mobile-menu",
 ]);
 
 let toastTimer = null;
