@@ -1,0 +1,42 @@
+/* 복사본 전용: Sky #59B5FF · White #FFFFFF · Pink #FF05BF */
+:root {
+  color-scheme: light;
+  --bg: #f4faff;
+  --paper: #FFFFFF;
+  --ink: #18334b;
+  --ink-2: #40566c;
+  --ink-sub: #6b7f92;
+  --line: #dfedfa;
+  --grid: #c9dff1;
+  --accent: #59B5FF;
+  --accent-press: #379feF;
+  --accent-soft: #59b5ff20;
+  --more: #FF05BF;
+  --pink: #FF05BF;
+  --shadow: 0 2px 5px #59b5ff08, 0 8px 28px #59b5ff10;
+}
+body { background: var(--bg); }
+.admin-top, .m-top { background: #FFFFFF; border-bottom-color: var(--line); }
+.admin-top a.active, .m-tab.active, .m-day.on { color: var(--ink); }
+.admin-top .nav-pill { background: linear-gradient(110deg,#59b5ff30,#ff05bf12); }
+.btn-primary, .pill:not(.plain):not(.plain-dark), .m-add, .m-day.on, .m-menu-toggle, .m-bubble-nav .m-tab.active { color: #18334b; }
+.m-menu-toggle { background: #59B5FF; box-shadow: 0 6px 22px #59b5ff40; }
+.m-menu-lines { color: #18334b; }
+.m-bubble-nav .m-tab { border-color: #59b5ff55; background: #FFFFFF; color: #3684bc; }
+.m-bubble-nav .m-tab.active { background: #59B5FF; border-color: #59B5FF; }
+.m-bubble-nav .m-tab.active svg { stroke: #18334b; }
+.m-hero { background: linear-gradient(125deg,#59b5ff2b,#FFFFFF 70%,#ff05bf0a); border: 1px solid #59b5ff3d; color: var(--ink); }
+.m-hero small, .m-hero-meta, .m-hero .m-payday { color: var(--ink-2); }
+.m-head .m-count, .change-inbox h3 span { color: #b60087; }
+.cell.selected { box-shadow: inset 0 0 0 2px #59B5FF; }
+.day-num.today { background: #59B5FF; color: #18334b; }
+.m-day.on span, .m-day.on small { color: #18334b; }
+.m-fold summary::after { border-color: #b60087; }
+.m-sheet-close { background: #59b5ff15; }
+input:focus-visible, button:focus-visible, a:focus-visible { outline-color: #FF05BF; }
+.ps-ids b { color: #3684bc; }
+/* 증가한 근무시간 포인트는 핑크, 오류·결근은 기존 경고색 유지 */
+.chip-time.over, .in-time.over, .staff-time.over { color: #b60087; }
+.m-top .m-tour { color:#FF05BF; border-color:#ff05bf33; background:#fff; }
+.m-bubble-nav .m-tab.active { box-shadow:0 4px 16px #59b5ff30,0 0 0 2px #ff05bf30; }
+.m-add { background:#ff05bf0e; color:#b60087; }

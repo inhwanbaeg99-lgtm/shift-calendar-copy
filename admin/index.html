@@ -10,7 +10,7 @@
         try { code = localStorage.getItem("shift-calendar:store"); } catch (e) {}
         if (code && !q.get("s")) q.set("s", code);
         var qs = q.toString();
-        location.replace("https://kokwork.web.app" + location.pathname.replace(/^\/shift-calendar/, "") + (qs ? "?" + qs : "") + location.hash);
+        location.replace("https://kokwork-copy.web.app" + location.pathname.replace(/^\/shift-calendar/, "") + (qs ? "?" + qs : "") + location.hash);
       }
     </script>
     <title>콕 관리자</title>
@@ -18,7 +18,7 @@
     <link rel="manifest" href="manifest.json" />
     <meta name="description" content="직원 · 근무표 · 달력 · 급여" />
     <meta name="robots" content="noindex" />
-    <meta name="theme-color" content="#f2f4f6" />
+    <meta name="theme-color" content="#FFFFFF" />
     <link rel="icon" href="../icons/icon-192.png" />
     <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -27,6 +27,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap" />
     <link rel="stylesheet" href="../style.css" />
     <link rel="stylesheet" href="../admin-mobile.css" />
+    <link rel="stylesheet" href="../copy-theme.css" />
   </head>
   <body data-site="admin">
     <div id="app"></div>
