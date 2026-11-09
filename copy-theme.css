@@ -242,5 +242,9 @@ input:focus-visible, button:focus-visible, a:focus-visible { outline-color: #FF0
     background: transparent; border: 0; border-radius: 0; box-shadow: none; color: var(--ink);
   }
   .m-top .m-login svg.m-account-symbol { width: 22px; height: 22px; fill: currentColor; stroke: none; }
-  .m-top .m-logout svg.m-exit-symbol { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .m-top .m-logout svg.m-exit-symbol { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+}
+
+@media (max-width: 767px) {
+  .m-top .m-tour { color: #59B5FF; }
 }
