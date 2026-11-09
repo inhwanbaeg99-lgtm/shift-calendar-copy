@@ -11,7 +11,7 @@
   --accent: #59B5FF;
   --accent-press: #379feF;
   --accent-soft: #59b5ff20;
-  --more: #FF05BF;
+  --more: #59B5FF;
   --pink: #FF05BF;
   --red: #FF05BF;
   --shadow: 0 2px 5px #59b5ff08, 0 8px 28px #59b5ff10;
@@ -36,8 +36,35 @@ body { background: var(--bg); }
 .m-sheet-close { background: #59b5ff15; }
 input:focus-visible, button:focus-visible, a:focus-visible { outline-color: #FF05BF; }
 .ps-ids b { color: #3684bc; }
-/* 근무시간·오류·결근 강조는 복사본 핑크 계열 */
-.chip-time.over, .in-time.over, .staff-time.over { color: #FF05BF; }
+/* 예정 시간보다 많으면 스카이블루, 적으면 핑크 */
+.timesheet td.over, .timesheet td.ts-day.over,
+.chip-time.over, .in-time.over, .staff-time.over,
+.m-days-list b.over, .tsc .over { color: #59B5FF; }
+.tsc-dot.over { background: #59B5FF; }
 .m-top .m-tour { color:#FF05BF; border-color:#ff05bf33; background:#fff; }
 .m-bubble-nav .m-tab.active { box-shadow:0 4px 16px #59b5ff30,0 0 0 2px #ff05bf30; }
 .m-add { background:#ff05bf0e; color:#FF05BF; }
+
+/* 명세서: 미리보기와 PDF에 동일한 복사본 팔레트 적용 */
+.payslip { background: #FFFFFF; color: #18334b; }
+.payslip .ps-top { padding-bottom: 20px; border-bottom: 2px solid #59B5FF; }
+.payslip .ps-brand { color: #18334b; }
+.payslip .ps-brand .logo { background: #59B5FF; color: #18334b; }
+.payslip .ps-month { padding: 8px 14px; border-radius: 12px; background: #edf7ff; color: #40566c; }
+.payslip .ps-name { color: #18334b; }
+.payslip .ps-meta { color: #6b7f92; }
+.payslip .ps-ids b { color: #3684bc; }
+.payslip .ps-net { background: #edf7ff; border: 1px solid #c9e7ff; }
+.payslip .ps-net span { color: #40566c; }
+.payslip .ps-net strong { color: #3684bc; }
+.payslip .ps-sec h2 { color: #3684bc; }
+.payslip .ps-sec:nth-of-type(2) h2 { color: #FF05BF; }
+.payslip .ps-sec li { color: #40566c; border-bottom-color: #dfedfa; }
+.payslip .ps-sec li b, .payslip .ps-sum b { color: #18334b; }
+.payslip .ps-sum { color: #18334b; }
+.payslip .ps-calc { background: #f4faff; border: 1px solid #dfedfa; }
+.payslip .ps-calc h2 { color: #3684bc; }
+.payslip .ps-calc ul { color: #40566c; }
+.payslip .ps-thanks { color: #40566c; }
+.payslip .ps-store { color: #FF05BF; }
+.payslip .ps-issued { color: #6b7f92; }
