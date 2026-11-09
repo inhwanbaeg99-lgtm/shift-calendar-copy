@@ -907,7 +907,7 @@ function renderAdminCalendar() {
 
 function renderDayPage(date) {
   const page = `
-    <div class="day-page">
+    <div class="day-page" data-detail-date="${date}">
       <div class="day-page-inner">
         <button type="button" class="round-btn back-btn" data-action="go-home" aria-label="달력으로 돌아가기">${ICON_PREV}</button>
         ${renderDayArea(date, { closable: false })}
@@ -3288,8 +3288,18 @@ window.addEventListener("hashchange", () => {
   if (smoothDay && document.startViewTransition) {
     document.documentElement.dataset.dayTransition = wasDay ? "back" : "forward";
     state.pageEnter = false;
-    const transition = document.startViewTransition(() => render());
-    transition.finished.finally(() => { delete document.documentElement.dataset.dayTransition; });
+    const date = wasDay ? app.querySelector(".day-page").dataset.detailDate : route().date;
+    const source = wasDay ? app.querySelector(".day-page-inner") : app.querySelector(`[data-date="${date}"]`);
+    if (source) source.style.viewTransitionName = "date-zoom";
+    const transition = document.startViewTransition(() => {
+      render();
+      const target = wasDay ? app.querySelector(`[data-date="${date}"]`) : app.querySelector(".day-page-inner");
+      if (target) target.style.viewTransitionName = "date-zoom";
+    });
+    transition.finished.finally(() => {
+      delete document.documentElement.dataset.dayTransition;
+      app.querySelectorAll('[style*="date-zoom"]').forEach(el => el.style.removeProperty("view-transition-name"));
+    });
   } else {
     render();
     if (smoothDay) app.querySelector(".m-main")?.animate(

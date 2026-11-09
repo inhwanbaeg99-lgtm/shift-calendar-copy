@@ -188,15 +188,22 @@ input:focus-visible, button:focus-visible, a:focus-visible { outline-color: #FF0
   .m-screen-employees .staff-link-url { overflow-wrap: anywhere; }
 }
 
-/* 날짜 상세 이동 시 헤더와 하단 메뉴는 유지하고 본문만 부드럽게 전환 */
+/* 누른 날짜 칸이 상세 영역으로 확대되는 공유 요소 전환 */
 @media (max-width: 767px) and (prefers-reduced-motion: no-preference) {
-  html[data-day-transition] .m-main { view-transition-name: day-content; }
-  ::view-transition-group(day-content) { animation-duration: 300ms; }
-  ::view-transition-old(day-content) { animation: day-content-out 220ms ease both; }
-  ::view-transition-new(day-content) { animation: day-content-in 300ms cubic-bezier(.22,.61,.36,1) both; }
-  html[data-day-transition="back"]::view-transition-new(day-content) { animation-name: day-content-back; }
-  ::view-transition-group(root) { animation: none; }
+  ::view-transition-group(date-zoom) {
+    animation-duration: 460ms;
+    animation-timing-function: cubic-bezier(.22,.75,.2,1);
+    overflow: hidden; border-radius: 18px;
+  }
+  ::view-transition-old(date-zoom), ::view-transition-new(date-zoom) {
+    height: 100%; width: 100%; object-fit: cover; object-position: top left;
+    animation-duration: 460ms; mix-blend-mode: normal;
+  }
+  ::view-transition-old(date-zoom) { animation: date-zoom-out 220ms ease-out both; }
+  ::view-transition-new(date-zoom) { animation: date-zoom-in 460ms ease both; }
+  html[data-day-transition]::view-transition-old(root),
+  html[data-day-transition]::view-transition-new(root) { animation: none; }
+  html[data-day-transition]::view-transition-group(root) { animation: none; }
 }
-@keyframes day-content-out { to { opacity: 0; transform: translateY(-8px); } }
-@keyframes day-content-in { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes day-content-back { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes date-zoom-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes date-zoom-in { 0%, 20% { opacity: 0; } 100% { opacity: 1; } }
