@@ -187,3 +187,13 @@ input:focus-visible, button:focus-visible, a:focus-visible { outline-color: #FF0
   .m-screen-employees .staff-link { margin: 12px 0 16px; padding: 14px; }
   .m-screen-employees .staff-link-url { overflow-wrap: anywhere; }
 }
+
+@media (max-width: 767px) {
+  .scroll-calendar-month { scroll-margin-top: 92px; padding: 12px 0 28px; }
+  .scroll-calendar-month + .scroll-calendar-month { border-top: 1px solid var(--line); }
+  .scroll-calendar .cal-head { justify-content: center; margin: 8px 0 20px; }
+  .scroll-calendar .cal-head .round-btn { display: none; }
+  .scroll-calendar .grid { height: max(390px, calc(100svh - 250px)); row-gap: 6px; }
+  .scroll-calendar .cell { padding-top: 12px; }
+  .scroll-calendar [data-calendar-edge] { height: 1px; }
+}
