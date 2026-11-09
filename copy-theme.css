@@ -187,3 +187,24 @@ input:focus-visible, button:focus-visible, a:focus-visible { outline-color: #FF0
   .m-screen-employees .staff-link { margin: 12px 0 16px; padding: 14px; }
   .m-screen-employees .staff-link-url { overflow-wrap: anywhere; }
 }
+
+.day-detail-heading > div { display: none; }
+@media (max-width: 767px) {
+  .m-main .day-page { padding: 6px 8px 20px; }
+  .m-main .day-page-inner { max-width: 520px; }
+  .m-main .day-detail-heading { display: grid; grid-template-columns: 44px minmax(0,1fr) 44px; align-items: center; margin: 8px 0 24px; }
+  .m-main .day-detail-heading > div { display: block; text-align: center; }
+  .m-main .day-detail-heading p { margin: 0 0 5px; color: var(--ink-sub); font-size: 13px; }
+  .m-main .day-detail-heading h1 { margin: 0; font-size: 22px; font-weight: 650; }
+  .m-main .day-detail-heading .back-btn { margin: 0; width: 44px; height: 44px; background: transparent; }
+  .m-main .day-page .day-area-inner { background: transparent; padding: 0; border-radius: 0; min-height: 0; gap: 24px; }
+  .m-main .day-page .date-box { background: #FFFFFF; border: 1px solid var(--line); border-radius: 18px; padding: 18px; }
+  .m-main .day-page .date-box-head { display: none; }
+  .m-main .day-page .box-label { margin-top: 0; font-weight: 600; }
+  .m-main .day-page .staff { padding: 0; }
+  .m-main .day-page .staff-title { font-size: 16px; font-weight: 650; }
+  .m-main .day-page .staff > .sub { line-height: 1.6; margin: 6px 0 16px; }
+  .m-main .day-page .staff-item { background: #FFFFFF; border: 1px solid var(--line); border-radius: 14px; padding: 6px 12px; margin-bottom: 10px; }
+  .m-main .day-page .staff-name-btn { min-height: 64px; }
+  .m-main .day-page .field { background: #FFFFFF; }
+}

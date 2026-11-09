@@ -909,7 +909,7 @@ function renderDayPage(date) {
   const page = `
     <div class="day-page">
       <div class="day-page-inner">
-        <button type="button" class="round-btn back-btn" data-action="go-home" aria-label="달력으로 돌아가기">${ICON_PREV}</button>
+        <div class="day-detail-heading"><button type="button" class="round-btn back-btn" data-action="go-home" aria-label="달력으로 돌아가기">${ICON_PREV}</button><div><p>${Number(date.slice(0,4))}년 ${Number(date.slice(5,7))}월</p><h1>${Number(date.slice(8))}일 ${WEEKDAYS[weekdayOf(date)]}요일</h1></div></div>
         ${renderDayArea(date, { closable: false })}
       </div>
     </div>`;
