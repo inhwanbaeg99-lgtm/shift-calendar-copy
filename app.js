@@ -3273,6 +3273,10 @@ function navigate(hash) {
 }
 
 window.addEventListener("hashchange", () => {
+  const wasDay = !!app.querySelector(".day-page");
+  const nextPage = route().name;
+  const smoothDay = !isDesktop() && !reducedMotion() &&
+    ((nextPage === "day" && !!app.querySelector(".admin-cal")) || (wasDay && nextPage === "calendar"));
   if (!tour?.nav) endTour(); // 튜토리얼이 화면을 바꾸는 중이면 끄지 않는다
   state.pageEnter = true;
   state.sheet = null;
@@ -3281,7 +3285,18 @@ window.addEventListener("hashchange", () => {
   state.allowDraft = null;
   state.slotEdit = null;
   state.helpOpen = {};
-  render();
+  if (smoothDay && document.startViewTransition) {
+    document.documentElement.dataset.dayTransition = wasDay ? "back" : "forward";
+    state.pageEnter = false;
+    const transition = document.startViewTransition(() => render());
+    transition.finished.finally(() => { delete document.documentElement.dataset.dayTransition; });
+  } else {
+    render();
+    if (smoothDay) app.querySelector(".m-main")?.animate(
+      [{ opacity: 0, transform: `translateY(${wasDay ? "-8px" : "12px"})` }, { opacity: 1, transform: "translateY(0)" }],
+      { duration: 280, easing: "cubic-bezier(.22,.61,.36,1)" }
+    );
+  }
 });
 
 // ---------- 로그인 ----------
