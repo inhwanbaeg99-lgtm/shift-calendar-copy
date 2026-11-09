@@ -236,3 +236,11 @@ input:focus-visible, button:focus-visible, a:focus-visible { outline-color: #FF0
   .m-screen-calendar .day-page .date-box-head > div { display: flex; align-items: baseline; gap: 10px; }
   .m-screen-calendar .day-page .date-box-wd { margin: 0; }
 }
+
+@media (max-width: 767px) {
+  .m-top .m-tour, .m-top .m-login, .m-top .m-logout {
+    background: transparent; border: 0; border-radius: 0; box-shadow: none; color: var(--ink);
+  }
+  .m-top .m-login svg.m-account-symbol { width: 22px; height: 22px; fill: currentColor; stroke: none; }
+  .m-top .m-logout svg.m-exit-symbol { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+}
