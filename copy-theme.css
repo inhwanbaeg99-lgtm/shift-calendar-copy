@@ -13,6 +13,7 @@
   --accent-soft: #59b5ff20;
   --more: #FF05BF;
   --pink: #FF05BF;
+  --red: #FF05BF;
   --shadow: 0 2px 5px #59b5ff08, 0 8px 28px #59b5ff10;
 }
 body { background: var(--bg); }
@@ -35,7 +36,7 @@ body { background: var(--bg); }
 .m-sheet-close { background: #59b5ff15; }
 input:focus-visible, button:focus-visible, a:focus-visible { outline-color: #FF05BF; }
 .ps-ids b { color: #3684bc; }
-/* 증가한 근무시간 포인트는 핑크, 오류·결근은 기존 경고색 유지 */
+/* 근무시간·오류·결근 강조는 복사본 핑크 계열 */
 .chip-time.over, .in-time.over, .staff-time.over { color: #b60087; }
 .m-top .m-tour { color:#FF05BF; border-color:#ff05bf33; background:#fff; }
 .m-bubble-nav .m-tab.active { box-shadow:0 4px 16px #59b5ff30,0 0 0 2px #ff05bf30; }

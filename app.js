@@ -129,8 +129,8 @@ const codeLabel = (code = storeId) => (code && code.length > 6 ? code.match(/.{1
 // 사람이 늘어나면 이 순서대로 아직 안 쓴 색을 준다
 const PALETTE = [
   "#fff2cc", "#d0cece", "#7030a0", "#bdd7ee", "#ffff00", "#8ea9db", "#c6e0b4", "#2e75b6", "#ffe699",
-  "#f8cbad", "#a9d08e", "#ff99cc", "#9bc2e6", "#ffc000", "#b4a7d6", "#c00000", "#00b0f0", "#ffd966",
-  "#548235", "#f4b183", "#d9d2e9", "#70ad47", "#ff7c80", "#dbdbdb",
+  "#f8cbad", "#a9d08e", "#ff99cc", "#9bc2e6", "#ffc000", "#b4a7d6", "#FF05BF", "#00b0f0", "#ffd966",
+  "#548235", "#f4b183", "#d9d2e9", "#70ad47", "#FF05BF", "#dbdbdb",
 ];
 
 // 직원마다 겹치지 않는 색을 자동으로 정한다. 이미 정해진 색은 유지.

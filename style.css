@@ -6,7 +6,7 @@
   --line: #e1e5e9;
   --accent: #0ea5a0;
   --accent-soft: #0ea5a01a;
-  --red: #ef4444;
+  --red: #FF05BF;
   --grid: #b9c2cc;
   --card-w: min(1560px, calc(100vw - 32px));
   /* 달력 한 칸 높이: 화면 높이에 맞춰 달력 전체가 한 화면에 들어오도록 */
@@ -743,7 +743,7 @@ button.in-row:hover {
 .error {
   margin: 8px 0 0;
   border-radius: 8px;
-  background: rgba(239, 68, 68, 0.1);
+  background: rgba(255, 5, 191, 0.1);
   padding: 8px 12px;
   font-size: 13px;
   color: var(--red);
@@ -1468,7 +1468,7 @@ td.name {
 }
 
 .sched th.sc-rest {
-  color: #e00000;
+  color: #FF05BF;
 }
 
 .sc-time {
@@ -1533,7 +1533,7 @@ td.name {
 }
 
 .sched-status.warn {
-  color: #d9480f;
+  color: #B60087;
 }
 
 
@@ -1696,7 +1696,7 @@ td.name {
   margin-left: 10px;
   font-size: 13px;
   font-weight: 600;
-  color: #d9480f;
+  color: #B60087;
 }
 
 /* 달력 이름 옆 출퇴근 시간: 넓을 때 07:00~12:00, 달력이 반으로 줄면 7-12 */
@@ -2436,7 +2436,7 @@ button:not(:disabled):active,
   --accent: #0ea5a0;
   --accent-press: #0b8682;
   --accent-soft: #e3f6f5;
-  --red: #f04452;
+  --red: #FF05BF;
   --grid: #d1d6db;
   --shadow: 0 1px 3px rgb(0 0 0 / 0.04), 0 6px 20px rgb(0 0 0 / 0.04);
   --radius: 20px;
@@ -2453,7 +2453,7 @@ button:not(:disabled):active,
     --accent: #2cc9c2;
     --accent-press: #0ea5a0;
     --accent-soft: #2cc9c229;
-    --red: #ff6b75;
+    --red: #FF05BF;
     --grid: #3a3a43;
     --shadow: none;
   }
@@ -3229,7 +3229,7 @@ td.name {
   color: var(--accent);
 }
 .staff-item .danger-ghost {
-  background: #ffeeee;
+  background: #FFF0FB;
   color: var(--red);
 }
 .staff-item.expanded {
@@ -3304,7 +3304,7 @@ td.name {
 }
 @media (prefers-color-scheme: dark) {
   .staff-item .danger-ghost {
-    background: rgb(255 107 117 / 0.16);
+    background: rgb(255 5 191 / 0.16);
   }
 }
 
@@ -4109,7 +4109,7 @@ td.name {
     color: var(--accent);
   }
   .sheet .danger-ghost {
-    background: #ffeeee;
+    background: #FFF0FB;
     color: var(--red);
   }
   .m-form .sheet-label:first-child {
@@ -4221,7 +4221,7 @@ td.name {
 
 @media (prefers-color-scheme: dark) and (max-width: 767px) {
   .sheet .danger-ghost {
-    background: rgb(255 107 117 / 0.16);
+    background: rgb(255 5 191 / 0.16);
   }
 }
 
@@ -4870,7 +4870,7 @@ td.name {
   color: #8b95a1;
 }
 .tsc .sun {
-  color: #f04452;
+  color: #FF05BF;
 }
 .tsc-cell b {
   display: block;
@@ -4889,7 +4889,7 @@ td.name {
   color: #3182f6;
 }
 .tsc .under {
-  color: #f04452;
+  color: #FF05BF;
 }
 .tsc-legend {
   margin: 16px 0 0;
@@ -4953,7 +4953,7 @@ td.name {
   background: #3182f6;
 }
 .tsc-dot.under {
-  background: #f04452;
+  background: #FF05BF;
 }
 
 /* 휴대폰에서 카톡으로 보낼 근무표: 화면 밖에 PC 크기로 그린다 */
@@ -5231,7 +5231,7 @@ td.name {
   padding: 8px 10px;
   border-radius: 8px;
   background: #fff4e5;
-  color: #92400e;
+  color: #B60087;
   font-size: 12px;
 }
 @media (prefers-color-scheme: dark) {
