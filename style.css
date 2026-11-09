@@ -1533,7 +1533,7 @@ td.name {
 }
 
 .sched-status.warn {
-  color: #B60087;
+  color: #FF05BF;
 }
 
 
@@ -1696,7 +1696,7 @@ td.name {
   margin-left: 10px;
   font-size: 13px;
   font-weight: 600;
-  color: #B60087;
+  color: #FF05BF;
 }
 
 /* 달력 이름 옆 출퇴근 시간: 넓을 때 07:00~12:00, 달력이 반으로 줄면 7-12 */
@@ -5231,7 +5231,7 @@ td.name {
   padding: 8px 10px;
   border-radius: 8px;
   background: #fff4e5;
-  color: #B60087;
+  color: #FF05BF;
   font-size: 12px;
 }
 @media (prefers-color-scheme: dark) {

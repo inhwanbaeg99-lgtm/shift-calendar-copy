@@ -28,16 +28,16 @@ body { background: var(--bg); }
 .m-bubble-nav .m-tab.active svg { stroke: #18334b; }
 .m-hero { background: linear-gradient(125deg,#59b5ff2b,#FFFFFF 70%,#ff05bf0a); border: 1px solid #59b5ff3d; color: var(--ink); }
 .m-hero small, .m-hero-meta, .m-hero .m-payday { color: var(--ink-2); }
-.m-head .m-count, .change-inbox h3 span { color: #b60087; }
+.m-head .m-count, .change-inbox h3 span { color: #FF05BF; }
 .cell.selected { box-shadow: inset 0 0 0 2px #59B5FF; }
 .day-num.today { background: #59B5FF; color: #18334b; }
 .m-day.on span, .m-day.on small { color: #18334b; }
-.m-fold summary::after { border-color: #b60087; }
+.m-fold summary::after { border-color: #FF05BF; }
 .m-sheet-close { background: #59b5ff15; }
 input:focus-visible, button:focus-visible, a:focus-visible { outline-color: #FF05BF; }
 .ps-ids b { color: #3684bc; }
 /* 근무시간·오류·결근 강조는 복사본 핑크 계열 */
-.chip-time.over, .in-time.over, .staff-time.over { color: #b60087; }
+.chip-time.over, .in-time.over, .staff-time.over { color: #FF05BF; }
 .m-top .m-tour { color:#FF05BF; border-color:#ff05bf33; background:#fff; }
 .m-bubble-nav .m-tab.active { box-shadow:0 4px 16px #59b5ff30,0 0 0 2px #ff05bf30; }
-.m-add { background:#ff05bf0e; color:#b60087; }
+.m-add { background:#ff05bf0e; color:#FF05BF; }
