@@ -3306,21 +3306,27 @@ async function animateDateIntoDetails(date) {
   const targetStyle = getComputedStyle(label);
   const number = label.cloneNode(true);
   number.className = "date-morph-number";
-  Object.assign(number.style, {position:"fixed",margin:"0",fontFamily:targetStyle.fontFamily,textAlign:"center",display:"flex",alignItems:"center",justifyContent:"center",padding:"0",border:"0"});
-  const textStart = {left:`${from.left}px`,top:`${from.top}px`,width:`${from.width}px`,height:`${from.height}px`,...startFont};
-  const textEnd = {left:`${glyph.left}px`,top:`${to.top}px`,width:`${glyph.width}px`,height:`${to.height}px`,fontSize:targetStyle.fontSize,fontWeight:targetStyle.fontWeight,lineHeight:targetStyle.lineHeight,letterSpacing:targetStyle.letterSpacing,color:targetStyle.color};
-  Object.assign(number.style,textStart);
-  layer.append(number);
+  const carrier = document.createElement("div");
+  carrier.className = "date-morph-carrier";
+  layer.append(carrier);
+  carrier.append(shape, number);
+  Object.assign(number.style, {position:"absolute",inset:"0",margin:"0",fontFamily:targetStyle.fontFamily,textAlign:"center",display:"flex",alignItems:"center",justifyContent:"center",padding:"0",border:"0",...startFont});
+  Object.assign(shape.style, {position:"absolute",inset:"0",width:"100%",height:"100%",borderRadius:"50%"});
   label.style.visibility = "hidden";
   const size = 64;
-  const origin = {left:`${from.left}px`,top:`${from.top}px`,width:`${from.width}px`,height:`${from.height}px`,borderRadius:"50%"};
-  const circle = {left:`${glyph.left + glyph.width/2 - size/2}px`,top:`${to.top + to.height/2 - size/2}px`,width:`${size}px`,height:`${size}px`,borderRadius:"50%"};
-  Object.assign(shape.style, origin);
+  const origin = {left:`${from.left}px`,top:`${from.top}px`,width:`${from.width}px`,height:`${from.height}px`};
+  const x = glyph.left + glyph.width/2 - size/2;
+  const y = to.top + to.height/2 - size/2;
+  const circle = {left:`${x}px`,top:`${y}px`,width:`${size}px`,height:`${size}px`};
+  Object.assign(carrier.style, {position:"fixed",...origin});
   try {
-    const numberMove = number.animate([textStart,textEnd], {duration:420,easing:"cubic-bezier(.22,.75,.2,1)",fill:"forwards"});
-    await Promise.all([numberMove.finished, shape.animate([origin,circle], {duration:420,easing:"cubic-bezier(.22,.75,.2,1)",fill:"forwards"}).finished]);
+    const numberGrow = number.animate([startFont,{fontSize:targetStyle.fontSize,fontWeight:targetStyle.fontWeight,lineHeight:targetStyle.lineHeight,letterSpacing:targetStyle.letterSpacing,color:targetStyle.color}], {duration:420,easing:"cubic-bezier(.22,.75,.2,1)",fill:"forwards"});
+    await Promise.all([numberGrow.finished, carrier.animate([origin,circle], {duration:420,easing:"cubic-bezier(.22,.75,.2,1)",fill:"forwards"}).finished]);
     if (!box.isConnected) return;
-    await shape.animate([circle,{left:`${rect.left}px`,top:`${rect.top}px`,width:`${rect.width}px`,height:`${rect.height}px`,borderRadius:"20px",background:"#FFFFFF"}],{duration:380,easing:"cubic-bezier(.22,.75,.2,1)",fill:"forwards"}).finished;
+    await shape.animate([
+      {left:"0px",top:"0px",width:`${size}px`,height:`${size}px`,borderRadius:"50%"},
+      {left:`${rect.left-x}px`,top:`${rect.top-y}px`,width:`${rect.width}px`,height:`${rect.height}px`,borderRadius:"20px",background:"#FFFFFF"}
+    ],{duration:380,easing:"cubic-bezier(.22,.75,.2,1)",fill:"forwards"}).finished;
     box.style.opacity = "1";
     const fades = content.map((el,i) => el.animate([{opacity:0},{opacity:1}],{duration:260,delay:i*55,easing:"ease-out",fill:"forwards"}));
     shape.style.visibility = "hidden";
