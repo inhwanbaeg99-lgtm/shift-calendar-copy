@@ -53,18 +53,18 @@ input:focus-visible, button:focus-visible, a:focus-visible { outline-color: #FF0
 .payslip .ps-month { padding: 8px 14px; border-radius: 12px; background: #edf7ff; color: #40566c; }
 .payslip .ps-name { color: #18334b; }
 .payslip .ps-meta { color: #6b7f92; }
-.payslip .ps-ids b { color: #3684bc; }
+.payslip .ps-ids b { color: #59B5FF; }
 .payslip .ps-net { background: #edf7ff; border: 1px solid #c9e7ff; }
 .payslip .ps-net span { color: #40566c; }
-.payslip .ps-net strong { color: #3684bc; }
-.payslip .ps-sec h2 { color: #3684bc; }
-.payslip .ps-sec:nth-of-type(2) h2 { color: #FF05BF; }
+.payslip .ps-net strong { color: #59B5FF; }
+.payslip .ps-sec h2 { color: #59B5FF; }
+.payslip .ps-sec:nth-of-type(2) h2 { color: #59B5FF; }
 .payslip .ps-sec li { color: #40566c; border-bottom-color: #dfedfa; }
 .payslip .ps-sec li b, .payslip .ps-sum b { color: #18334b; }
 .payslip .ps-sum { color: #18334b; }
 .payslip .ps-calc { background: #f4faff; border: 1px solid #dfedfa; }
-.payslip .ps-calc h2 { color: #3684bc; }
+.payslip .ps-calc h2 { color: #59B5FF; }
 .payslip .ps-calc ul { color: #40566c; }
 .payslip .ps-thanks { color: #40566c; }
-.payslip .ps-store { color: #FF05BF; }
+.payslip .ps-store { color: #59B5FF; }
 .payslip .ps-issued { color: #6b7f92; }
