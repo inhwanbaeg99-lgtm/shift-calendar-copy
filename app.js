@@ -1141,27 +1141,32 @@ function renderEmployeePage(id) {
   if (!emp) return renderEmployees();
   const content = renderEmpSheet(emp).replace('data-action="close-sheet"', 'data-action="employee-list"');
   return renderAdminShell("employees", `
-    <a class="m-pay-back" href="#/employees" aria-label="직원 목록으로 돌아가기">${ICON_PREV}</a>
-    <section class="m-employee-detail">${content}</section>`);
+    <section class="m-employee-detail">
+      <div class="m-pay-detail-heading">
+        <a class="m-pay-back" href="#/employees" aria-label="직원 목록으로 돌아가기">${ICON_PREV}</a>
+        <div class="m-pay-person"><h1>${esc(emp.name)}</h1>${emp.phone ? `<p>${esc(formatPhone(emp.phone))}</p>` : ""}</div>
+      </div>
+      ${content}
+    </section>`);
 }
 
 function renderEmpSheet(e) {
   const order = [1, 2, 3, 4, 5, 6, 0];
-  const changeIcon = svg(16, '<path d="M4 7h15l-3-3M20 17H5l3 3"/>', 1.8);
+  const changeIcon = svg(16, '<path d="M20 7v5h-5M4 17v-5h5M6.1 7a7 7 0 0 1 11.6-2L20 8M4 16l2.3 3A7 7 0 0 0 17.9 17"/>', 1.8);
   const payToggle = `<button type="button" class="m-toggle${isSalaried(e) ? " on" : ""}" data-action="toggle-paytype" data-id="${e.id}" aria-label="급여 방식 변경: 현재 ${isSalaried(e) ? "월급제" : "시급제"}">${isSalaried(e) ? "월급제" : "시급제"}${changeIcon}</button>`;
   return `
     <div class="sheet-head">
       <span class="swatch big" style="background:${copyDisplayColor(e.color)}"></span>
       <div><h2>${esc(e.name)}</h2>${e.phone ? `<small>${esc(formatPhone(e.phone))}</small>` : ""}</div>
     </div>
-    <p class="sheet-label">요일별 근무 시간 <small>7-12, 18-2230 처럼 입력 · 비우면 쉬는 날</small></p>
+    <p class="sheet-label">요일별 근무 시간</p>
     <div class="m-week">
       ${order
         .map(
           (wd) => `
         <label class="m-week-row${wd === 0 ? " sun" : wd === 6 ? " sat" : ""}">
           <span>${WEEKDAYS[wd]}</span>
-          <input class="field range" type="text" placeholder="쉬는 날" value="${formatRange(e.weekly[wd])}" data-weekly="${wd}" data-id="${e.id}" aria-label="${esc(e.name)} ${WEEKDAYS[wd]}요일 근무 시간" />
+          <input class="field range" type="text" placeholder="휴무" value="${formatRange(e.weekly[wd])}" data-weekly="${wd}" data-id="${e.id}" aria-label="${esc(e.name)} ${WEEKDAYS[wd]}요일 근무 시간" />
         </label>`,
         )
         .join("")}
@@ -1169,14 +1174,12 @@ function renderEmpSheet(e) {
     ${
       isSalaried(e)
         ? `<div class="m-paytype-heading"><p class="sheet-label">급여</p>${payToggle}</div><p class="sheet-note">월급제(4대보험)예요. 월급·식대·공제액은 급여 화면에서 이 직원을 눌러 <b>수당 · 명세서</b>에서 입력해요.</p>`
-        : `<label class="sheet-label" for="m-wage">시급</label>
-    <div class="m-wage"><input id="m-wage" class="field money" type="text" inputmode="numeric" value="${formatMoney(e.hourlyWage)}" data-wage="${e.id}" aria-label="${esc(e.name)} 시급" /><span>원</span>${payToggle}</div>`
+        : `<div class="m-wage"><label class="sheet-label" for="m-wage">시급</label><input id="m-wage" class="field money" type="text" inputmode="numeric" value="${formatMoney(e.hourlyWage)}" data-wage="${e.id}" aria-label="${esc(e.name)} 시급" /><span>원</span>${payToggle}</div>`
     }
     <div class="m-toggles">
       <button type="button" class="m-toggle${e.active ? " on" : ""}" data-action="toggle-active" data-id="${e.id}">${e.active ? "재직중" : "비활성"}${changeIcon}</button>
       <button type="button" class="m-toggle${isManager(e) ? " on" : ""}" data-action="toggle-role" data-id="${e.id}">${isManager(e) ? "직원" : "알바"}${changeIcon}</button>
     </div>
-    <p class="sheet-note">직원으로 바꾸면 월급제, 알바로 바꾸면 시급제가 돼요. 직원은 출근을 안 찍어도 근무표대로 급여에 나와요.</p>
     <div class="sheet-actions">
       <button type="button" class="btn-ghost danger-ghost" data-action="remove-employee" data-id="${e.id}">삭제</button>
       <button type="button" class="btn-primary" data-action="close-sheet">완료</button>

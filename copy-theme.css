@@ -149,3 +149,15 @@ input:focus-visible, button:focus-visible, a:focus-visible { outline-color: #FF0
 .m-employee-detail .m-wage .m-toggle { flex-shrink: 0; }
 .m-paytype-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 20px; }
 .m-paytype-heading .sheet-label { margin: 0; }
+
+/* 직원 상세: 급여 상세와 같은 헤더 및 글자 체계 */
+.m-employee-detail > .sheet-head { display: none; }
+.m-employee-detail .sheet-label { font-size: 14px; font-weight: 600; }
+.m-employee-detail .m-week-row > span { font-size: 14px; font-weight: 600; }
+.m-employee-detail .field { font-weight: 500; color: var(--ink); }
+.m-employee-detail .m-toggle { font-size: 14px; font-weight: 600; padding: 10px 12px; }
+.m-employee-detail .m-wage { margin-top: 20px; gap: 8px; flex-wrap: wrap; }
+.m-employee-detail .m-wage .sheet-label { flex: 0 0 auto; margin: 0 4px 0 0; }
+.m-employee-detail .m-wage input { flex: 0 1 110px; width: 110px; height: 42px; padding: 8px 10px; font-size: 16px; }
+.m-employee-detail .m-wage > span { font-size: 14px; font-weight: 500; }
+.m-employee-detail .m-wage .m-toggle { margin-left: auto; }
