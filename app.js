@@ -3304,13 +3304,20 @@ async function animateDateIntoDetails(date) {
   range.selectNodeContents(label);
   const glyph = range.getBoundingClientRect();
   const targetStyle = getComputedStyle(label);
-  const number = label.cloneNode(true);
-  number.className = "date-morph-number";
+  const number = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  number.setAttribute("viewBox", "0 0 64 64");
+  number.setAttribute("class", "date-morph-number");
+  const numeral = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  numeral.textContent = label.textContent;
+  Object.assign(numeral.style, {fontFamily:targetStyle.fontFamily,fontSize:targetStyle.fontSize,fontWeight:targetStyle.fontWeight,letterSpacing:targetStyle.letterSpacing,fill:targetStyle.color});
+  number.append(numeral);
   const carrier = document.createElement("div");
   carrier.className = "date-morph-carrier";
   layer.append(carrier);
   carrier.append(shape, number);
-  Object.assign(number.style, {position:"absolute",inset:"0",margin:"0",fontFamily:targetStyle.fontFamily,textAlign:"center",display:"flex",alignItems:"center",justifyContent:"center",padding:"0",border:"0",...startFont});
+  Object.assign(number.style, {position:"absolute",inset:"0",width:"100%",height:"100%",margin:"0",overflow:"visible",transform:"none",transformOrigin:"50% 50%"});
+  const ink = numeral.getBBox();
+  numeral.setAttribute("transform", `translate(${32-ink.x-ink.width/2} ${32-ink.y-ink.height/2})`);
   Object.assign(shape.style, {position:"absolute",inset:"0",width:"100%",height:"100%",borderRadius:"50%"});
   label.style.visibility = "hidden";
   const size = 64;
@@ -3320,7 +3327,8 @@ async function animateDateIntoDetails(date) {
   const circle = {left:`${x}px`,top:`${y}px`,width:`${size}px`,height:`${size}px`};
   Object.assign(carrier.style, {position:"fixed",...origin});
   try {
-    const numberGrow = number.animate([startFont,{fontSize:targetStyle.fontSize,fontWeight:targetStyle.fontWeight,lineHeight:targetStyle.lineHeight,letterSpacing:targetStyle.letterSpacing,color:targetStyle.color}], {duration:420,easing:"cubic-bezier(.22,.75,.2,1)",fill:"forwards"});
+    const initialScale = parseFloat(startFont.fontSize) / parseFloat(targetStyle.fontSize) * size / from.width;
+    const numberGrow = number.animate([{transform:`scale(${initialScale})`},{transform:"scale(1)"}], {duration:420,easing:"cubic-bezier(.22,.75,.2,1)",fill:"forwards"});
     await Promise.all([numberGrow.finished, carrier.animate([origin,circle], {duration:420,easing:"cubic-bezier(.22,.75,.2,1)",fill:"forwards"}).finished]);
     if (!box.isConnected) return;
     await shape.animate([

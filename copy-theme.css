@@ -249,4 +249,4 @@ input:focus-visible, button:focus-visible, a:focus-visible { outline-color: #FF0
   .m-top .m-tour { color: #59B5FF; }
 }
 /* 숫자 글꼴의 아래쪽 여백을 보정해 원 안에서 시각적으로 중앙 정렬 */
-.date-morph-number { transform: translateY(-0.07em); }
+.date-morph-number { transform: none; }
