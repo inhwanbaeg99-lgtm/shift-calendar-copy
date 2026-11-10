@@ -385,3 +385,12 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
   html[data-tab-shift]::view-transition-new(mobile-nav),
   html[data-tab-shift]::view-transition-new(mobile-header) { animation: none; opacity: 1; mix-blend-mode: normal; }
 }
+
+@media (max-width: 767px) {
+  .m-pay-detail .m-pay-detail-heading { display: flex; justify-content: center; margin-top: 8px; }
+  .m-pay-detail .m-pay-person { text-align: center; }
+  .m-pay-person .dd-btn { min-height: 42px; padding: 6px 10px; justify-content: center; gap: 8px; background: transparent; font-size: 22px; font-weight: 700; }
+  .m-pay-person .dd-btn svg { width: 20px; height: 20px; }
+  .m-pay-person .dd-list { max-height: min(220px,40svh); left: 50%; transform: translateX(-50%); text-align: left; }
+  .m-day-top a.m-day-back { text-decoration: none; }
+}

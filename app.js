@@ -1073,10 +1073,11 @@ function renderMobileShell(active, content) {
   const accountIcon = '<svg class="m-account-symbol" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-4 0-8 2-8 5v2h16v-2c0-3-4-5-8-5z"/></svg>';
   const logoutIcon = '<svg class="m-exit-symbol" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>';
   return `
-    <header class="m-top${["calendar","records"].includes(route().name) ? " m-calendar-top" : route().name === "day" ? " m-day-top" : ""}">
+    <header class="m-top${["calendar","records"].includes(route().name) ? " m-calendar-top" : ["day","pay-detail"].includes(route().name) ? " m-day-top" : ""}">
       ${route().name === "calendar" ? mobilePayrollMonthSelect(true) : ""}
       ${route().name === "records" ? mobilePayrollMonthSelect() : ""}
       ${route().name === "day" ? `<button type="button" class="m-day-back" data-action="go-home" aria-label="달력으로 돌아가기">${ICON_PREV}</button>` : ""}
+      ${route().name === "pay-detail" ? `<a class="m-day-back" href="#/records" aria-label="급여 목록으로 돌아가기">${ICON_PREV}</a>` : ""}
       <span class="m-store" aria-hidden="true"></span>
       <button type="button" class="m-tour" data-action="start-tour" aria-label="도움말" title="도움말">?</button>
       ${demoLoaded ? `<a class="m-login" href="#/login" aria-label="로그인" title="로그인">${accountIcon}</a>` : `<a class="m-login" href="#/mypage" aria-label="마이페이지" title="마이페이지">${accountIcon}</a>`}
@@ -1350,8 +1351,7 @@ function renderPayPage(id, month) {
   return renderAdminShell("records", `
     <section class="m-pay-detail" aria-label="직원 급여 상세">
       <div class="m-pay-detail-heading">
-        <a class="m-pay-back" href="#/records" aria-label="급여 목록으로 돌아가기">${ICON_PREV}</a>
-        <div class="m-pay-person"><h1>${esc(emp.name)}</h1><p>${Number(month.slice(5, 7))}월 · ${summary.days}일 · ${hrs(summary.hours)}</p></div>
+        <div class="m-pay-person"><select class="field m-pay-employee-select" data-pay-employee="true" aria-label="급여 직원 선택">${store.employees.map(e => `<option value="${esc(e.id)}"${e.id === id ? " selected" : ""}>${esc(e.name)}</option>`).join("")}</select><p>${Number(month.slice(5, 7))}월 · ${summary.days}일 · ${hrs(summary.hours)}</p></div>
       </div>
       ${renderPaySheet(emp)}
     </section>
@@ -3248,7 +3248,7 @@ function render() {
 // 고르면 select 값을 바꾸고 change 를 내보내므로 저장 처리는 원래 코드 그대로다. 휴대폰은 기본 선택창을 쓴다.
 const DD_CHEVRON = svg(14, '<path d="m6 9 6 6 6-6"/>', 2.5);
 function enhanceSelects() {
-  const selector = isDesktop() ? "select.field" : ".m-screen-records select.m-tax, .m-payroll-month-select";
+  const selector = isDesktop() ? "select.field" : ".m-screen-records select.m-tax, .m-payroll-month-select, .m-pay-employee-select";
   for (const sel of app.querySelectorAll(selector)) {
     const dd = document.createElement("div");
     dd.className = "dd";
@@ -4333,7 +4333,7 @@ const blockDemo = (e) => {
   showToast("둘러보기 중이에요. 로그인하면 쓸 수 있어요.");
 };
 // 보기만 바꾸는 입력칸 (급여 화면의 직원 선택)
-const demoViewField = (t) => t.dataset?.payroll !== undefined || t.dataset?.calendarMonth !== undefined;
+const demoViewField = (t) => t.dataset?.payroll !== undefined || t.dataset?.calendarMonth !== undefined || t.dataset?.payEmployee !== undefined;
 // 둘러보기 화면인지 (로그인·매장 등록 화면은 막지 않는다)
 const inDemo = (t) => demoLoaded && ADMIN_SITE && !t.closest?.(".lock-page");
 
@@ -4507,6 +4507,10 @@ app.addEventListener("change", (e) => {
     const item = state.allowDraft[Number(t.dataset.index)];
     item[t.dataset.allow] = t.dataset.allow === "amount" ? parseMoney(t.value) : t.value.trim();
     render();
+    return;
+  }
+  if (t.dataset.payEmployee) {
+    navigate(`#/records/${encodeURIComponent(t.value)}/${state.payroll.month}`);
     return;
   }
   if (t.dataset.calendarMonth) {
