@@ -398,3 +398,17 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
   .m-tabbar.m-text-nav { padding: 0; }
   .m-text-pill { border-radius: 32px; }
 }
+
+@media (max-width: 767px) {
+  .m-screen-records:has(.m-pay-detail) { padding-top: 0; }
+  .m-pay-detail .m-pay-detail-heading { margin: 0 0 12px; }
+}
+.m-pay-amount { position: relative; }
+.m-pay-amount > small { padding-right: 64px; }
+.m-payslip-preview-btn { position: absolute; right: 14px; top: 12px; border: 1px solid #59b5ff66; border-radius: 9px; background: #FFFFFF; color: #3684bc; padding: 5px 10px; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.pay-preview-overlay { position: fixed; inset: 0; z-index: 250; display: flex; align-items: center; justify-content: center; padding: max(16px,env(safe-area-inset-top)) 12px max(16px,env(safe-area-inset-bottom)); box-sizing: border-box; background: #18334b35; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.pay-preview-dialog { width: min(100%,794px); max-height: 100%; display: flex; flex-direction: column; background: #FFFFFF; border-radius: 20px; overflow: hidden; transform-origin: top left; box-shadow: 0 18px 60px #18334b25; }
+.pay-preview-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--line); color: var(--ink); flex-shrink: 0; }
+.pay-preview-close { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; background: transparent; border: 0; color: var(--ink); }
+.pay-preview-scroll { overflow: auto; min-height: 0; overscroll-behavior: contain; }
+.pay-preview-paper { width: 794px; }

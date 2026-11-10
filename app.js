@@ -1358,6 +1358,49 @@ function renderPayPage(id, month) {
     ${renderPayslipModal()}`);
 }
 
+function previewPayslipFromAmount(id) {
+  if (document.querySelector(".pay-preview-overlay")) return;
+  const emp = employeeById(id);
+  if (!emp) return;
+  const source = app.querySelector(".m-pay-amount");
+  const from = source?.getBoundingClientRect();
+  const month = state.payroll.month;
+  const overlay = document.createElement("div");
+  overlay.className = "pay-preview-overlay";
+  overlay.innerHTML = `<section class="pay-preview-dialog" role="dialog" aria-modal="true" aria-label="급여명세서 미리보기"><div class="pay-preview-toolbar"><b>급여명세서</b><button type="button" class="pay-preview-close" aria-label="명세서 닫기">${ICON_CLOSE}</button></div><div class="pay-preview-scroll"><div class="pay-preview-paper">${renderPayslip(payrollRow(emp,month,monthRecords(month,id)),month)}</div></div></section>`;
+  const focus = document.activeElement;
+  const overflow = document.body.style.overflow;
+  document.body.style.overflow = "hidden";
+  document.body.append(overlay);
+  const dialog = overlay.querySelector(".pay-preview-dialog");
+  const paper = overlay.querySelector(".pay-preview-paper");
+  const scroll = overlay.querySelector(".pay-preview-scroll");
+  const scalePaper = () => paper.style.zoom = Math.min(1,scroll.clientWidth/794);
+  scalePaper();
+  window.addEventListener("resize",scalePaper);
+  const to = dialog.getBoundingClientRect();
+  const origin = from ? `translate(${from.left-to.left}px,${from.top-to.top}px) scale(${from.width/to.width},${from.height/to.height})` : "scale(.95)";
+  if (!reducedMotion()) {
+    dialog.animate([{transform:origin,borderRadius:"18px",background:"#edf7ff"},{transform:"none",borderRadius:"20px",background:"#FFFFFF"}],{duration:430,easing:"cubic-bezier(.22,.75,.2,1)"});
+    Array.from(dialog.children).forEach(el=>el.animate([{opacity:0},{opacity:1}],{duration:220,delay:300,fill:"both"}));
+  }
+  const close = () => {
+    document.removeEventListener("keydown",onKey);
+    window.removeEventListener("resize",scalePaper);
+    document.body.style.overflow = overflow;
+    overlay.remove();
+    if (focus?.isConnected) focus.focus({preventScroll:true});
+  };
+  const onKey = e => {
+    if(e.key === "Escape") close();
+    if(e.key === "Tab") { e.preventDefault(); overlay.querySelector(".pay-preview-close").focus(); }
+  };
+  document.addEventListener("keydown",onKey);
+  overlay.querySelector(".pay-preview-close").addEventListener("click",close);
+  overlay.addEventListener("click",e=>{if(e.target===overlay)close();});
+  overlay.querySelector(".pay-preview-close").focus({preventScroll:true});
+}
+
 function renderPaySheet(emp) {
   const { month } = state.payroll;
   const recs = monthRecords(month, emp.id);
@@ -1374,7 +1417,7 @@ function renderPaySheet(emp) {
       <span class="swatch big" style="background:${copyDisplayColor(emp.color)}"></span>
       <div><h2>${esc(emp.name)}</h2><small>${Number(month.slice(5, 7))}월 · ${r.days}일 · ${hrs(r.hours)}</small></div>
     </div>
-    <div class="m-hero small"><small>받을 금액</small><strong>${r.net === null ? "공제액 입력 필요" : won(r.net)}</strong></div>
+    <div class="m-hero small m-pay-amount"><button type="button" class="m-payslip-preview-btn" data-action="preview-payslip" data-id="${emp.id}">명세서</button><small>받을 금액</small><strong>${r.net === null ? "공제액 입력 필요" : won(r.net)}</strong></div>
     <ul class="m-lines">
       ${line(r.salaried ? "기본급 (월급)" : "기본급", r.base)}
       ${r.salaried ? (r.meal ? line("식대 (비과세)", r.meal) : "") : line("주휴수당", r.weekly.total)}
@@ -4067,6 +4110,9 @@ app.addEventListener("click", (e) => {
       if (state.helpOpen[key]) document.querySelector(`[data-key="${key}"]`)?.closest(".help")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
       return;
     }
+    case "preview-payslip":
+      previewPayslipFromAmount(id);
+      return;
     case "open-payslip":
       state.modalEnter = true;
       openPayslipState(id);
@@ -4301,7 +4347,7 @@ function renderInstallHint() {
 // 화면을 옮겨 다니고 펼쳐 보는 동작만 허용. 나머지(추가·수정·삭제·저장·내보내기)는 안내만 띄운다.
 const DEMO_ALLOWED = new Set([
   "prev-month", "next-month", "close-panel", "go-home", "toggle-staff", "toggle-rec", "toggle-help",
-  "payroll-prev", "payroll-next", "open-payslip", "close-payslip",
+  "payroll-prev", "payroll-next", "preview-payslip", "open-payslip", "close-payslip",
   "open-employee-page", "employee-list", "open-pay-page", "open-sheet", "close-sheet", "sched-day", "open-today", "install-app", "dismiss-install", "start-tour", "toggle-mobile-menu",
 ]);
 
