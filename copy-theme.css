@@ -284,3 +284,6 @@ input:focus-visible, button:focus-visible, a:focus-visible { outline-color: #FF0
   .m-calendar-top .dd > select.m-payroll-month-select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; pointer-events: none; }
   .m-calendar-top .dd-list { max-height: min(200px,35svh); top: calc(100% + 4px); }
 }
+@media (max-width: 767px) {
+  .m-calendar-top .dd-btn svg { width: 20px; height: 20px; stroke-width: 2.5; }
+}
