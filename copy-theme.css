@@ -412,3 +412,17 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
 .pay-preview-close { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; background: transparent; border: 0; color: var(--ink); }
 .pay-preview-scroll { overflow: auto; min-height: 0; overscroll-behavior: contain; }
 .pay-preview-paper { width: 794px; }
+
+@media (max-width: 767px) {
+  .m-top.m-pay-detail-top { grid-template-columns: 40px minmax(0,1fr) 40px; }
+  .m-pay-header-person { display: flex; justify-content: center; min-width: 0; }
+  .m-pay-header-person .dd-btn { background: transparent; padding: 4px 8px; min-height: 44px; font-size: 22px; font-weight: 700; gap: 8px; }
+  .m-pay-header-person .dd-btn svg { width: 20px; height: 20px; }
+  .m-pay-header-person .dd-list { max-height: min(220px,40svh); }
+}
+.m-pay-detail-summary { text-align: center; margin: 0 0 14px; font-size: 13px; color: var(--ink-sub); }
+.m-pay-amount.is-payslip { padding: 0; background: #FFFFFF; overflow: hidden; border: 1px solid var(--line); box-sizing: border-box; }
+.pay-inline-paper { width: 794px; }
+.m-pay-amount.is-payslip .payslip strong { margin-top: initial; font-size: inherit; font-weight: inherit; display: inline; }
+.m-pay-amount.is-payslip .ps-net strong { display: block; margin-top: 8px; font-size: 48px; font-weight: 800; }
+.m-pay-amount.is-payslip .payslip small { font-size: inherit; font-weight: inherit; opacity: 1; }

@@ -1066,6 +1066,10 @@ function mobilePayrollMonthSelect(calendar = false) {
   return `<select class="field m-payroll-month-select${calendar ? " m-calendar-month-select" : ""}" ${calendar ? 'data-calendar-month="true"' : 'data-payroll="month"'} aria-label="${calendar ? "출퇴근 조회 월" : "급여 조회 월"}">${options}</select>`;
 }
 
+function mobilePayEmployeeSelect(id) {
+  return `<select class="field m-pay-employee-select" data-pay-employee="true" aria-label="급여 직원 선택">${store.employees.map(e=>`<option value="${esc(e.id)}"${e.id===id ? " selected" : ""}>${esc(e.name)}</option>`).join("")}</select>`;
+}
+
 function renderMobileShell(active, content) {
   const tab = (key, label, i) =>
     `<a href="#/${key}" class="m-tab${active === key ? " active" : ""}"${active === key ? ' aria-current="page"' : ""} aria-label="${label}"><span>${label}</span></a>`;
@@ -1073,13 +1077,12 @@ function renderMobileShell(active, content) {
   const accountIcon = '<svg class="m-account-symbol" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-4 0-8 2-8 5v2h16v-2c0-3-4-5-8-5z"/></svg>';
   const logoutIcon = '<svg class="m-exit-symbol" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>';
   return `
-    <header class="m-top${["calendar","records"].includes(route().name) ? " m-calendar-top" : ["day","pay-detail"].includes(route().name) ? " m-day-top" : ""}">
+    <header class="m-top${["calendar","records"].includes(route().name) ? " m-calendar-top" : ["day","pay-detail"].includes(route().name) ? ` m-day-top${route().name === "pay-detail" ? " m-pay-detail-top" : ""}` : ""}">
       ${route().name === "calendar" ? mobilePayrollMonthSelect(true) : ""}
       ${route().name === "records" ? mobilePayrollMonthSelect() : ""}
       ${route().name === "day" ? `<button type="button" class="m-day-back" data-action="go-home" aria-label="달력으로 돌아가기">${ICON_PREV}</button>` : ""}
       ${route().name === "pay-detail" ? `<a class="m-day-back" href="#/records" aria-label="급여 목록으로 돌아가기">${ICON_PREV}</a>` : ""}
-      <span class="m-store" aria-hidden="true"></span>
-      <button type="button" class="m-tour" data-action="start-tour" aria-label="도움말" title="도움말">?</button>
+      ${route().name === "pay-detail" ? `<div class="m-pay-header-person">${mobilePayEmployeeSelect(route().id)}</div>` : `<span class="m-store" aria-hidden="true"></span><button type="button" class="m-tour" data-action="start-tour" aria-label="도움말" title="도움말">?</button>`}
       ${demoLoaded ? `<a class="m-login" href="#/login" aria-label="로그인" title="로그인">${accountIcon}</a>` : `<a class="m-login" href="#/mypage" aria-label="마이페이지" title="마이페이지">${accountIcon}</a>`}
     </header>
     ${demoLoaded ? "" : `<div class="m-staff-shortcut">${staffCalLink("m-staff-link")}</div>`}
@@ -1350,55 +1353,37 @@ function renderPayPage(id, month) {
   const summary = payrollRow(emp, month, monthRecords(month, emp.id));
   return renderAdminShell("records", `
     <section class="m-pay-detail" aria-label="직원 급여 상세">
-      <div class="m-pay-detail-heading">
-        <div class="m-pay-person"><select class="field m-pay-employee-select" data-pay-employee="true" aria-label="급여 직원 선택">${store.employees.map(e => `<option value="${esc(e.id)}"${e.id === id ? " selected" : ""}>${esc(e.name)}</option>`).join("")}</select><p>${Number(month.slice(5, 7))}월 · ${summary.days}일 · ${hrs(summary.hours)}</p></div>
-      </div>
+      <p class="m-pay-detail-summary">${Number(month.slice(5, 7))}월 · ${summary.days}일 · ${hrs(summary.hours)}</p>
       ${renderPaySheet(emp)}
     </section>
     ${renderPayslipModal()}`);
 }
 
 function previewPayslipFromAmount(id) {
-  if (document.querySelector(".pay-preview-overlay")) return;
   const emp = employeeById(id);
-  if (!emp) return;
   const source = app.querySelector(".m-pay-amount");
-  const from = source?.getBoundingClientRect();
+  if (!emp || !source || source.classList.contains("is-payslip")) return;
+  const original = source.innerHTML;
   const month = state.payroll.month;
-  const overlay = document.createElement("div");
-  overlay.className = "pay-preview-overlay";
-  overlay.innerHTML = `<section class="pay-preview-dialog" role="dialog" aria-modal="true" aria-label="급여명세서 미리보기"><div class="pay-preview-toolbar"><b>급여명세서</b><button type="button" class="pay-preview-close" aria-label="명세서 닫기">${ICON_CLOSE}</button></div><div class="pay-preview-scroll"><div class="pay-preview-paper">${renderPayslip(payrollRow(emp,month,monthRecords(month,id)),month)}</div></div></section>`;
-  const focus = document.activeElement;
-  const overflow = document.body.style.overflow;
-  document.body.style.overflow = "hidden";
-  document.body.append(overlay);
-  const dialog = overlay.querySelector(".pay-preview-dialog");
-  const paper = overlay.querySelector(".pay-preview-paper");
-  const scroll = overlay.querySelector(".pay-preview-scroll");
-  const scalePaper = () => paper.style.zoom = Math.min(1,scroll.clientWidth/794);
-  scalePaper();
-  window.addEventListener("resize",scalePaper);
-  const to = dialog.getBoundingClientRect();
-  const origin = from ? `translate(${from.left-to.left}px,${from.top-to.top}px) scale(${from.width/to.width},${from.height/to.height})` : "scale(.95)";
+  const previousHeight = source.getBoundingClientRect().height;
+  source.classList.add("is-payslip");
+  source.setAttribute("aria-label", "급여명세서 미리보기");
+  source.innerHTML = `<div class="pay-preview-toolbar"><b>급여명세서</b><button type="button" class="pay-preview-close" aria-label="금액 보기로 돌아가기">${ICON_CLOSE}</button></div><div class="pay-inline-paper">${renderPayslip(payrollRow(emp,month,monthRecords(month,id)),month)}</div>`;
+  const paper = source.querySelector(".pay-inline-paper");
+  paper.style.zoom = Math.min(1,source.clientWidth/794);
+  const expandedHeight = source.getBoundingClientRect().height;
   if (!reducedMotion()) {
-    dialog.animate([{transform:origin,borderRadius:"18px",background:"#edf7ff"},{transform:"none",borderRadius:"20px",background:"#FFFFFF"}],{duration:430,easing:"cubic-bezier(.22,.75,.2,1)"});
-    Array.from(dialog.children).forEach(el=>el.animate([{opacity:0},{opacity:1}],{duration:220,delay:300,fill:"both"}));
+    source.animate([{height:`${previousHeight}px`,background:"#edf7ff"},{height:`${expandedHeight}px`,background:"#FFFFFF"}],{duration:460,easing:"cubic-bezier(.22,.75,.2,1)"});
+    paper.animate([{opacity:0},{opacity:1}],{duration:260,delay:220,fill:"both"});
   }
-  const close = () => {
-    document.removeEventListener("keydown",onKey);
-    window.removeEventListener("resize",scalePaper);
-    document.body.style.overflow = overflow;
-    overlay.remove();
-    if (focus?.isConnected) focus.focus({preventScroll:true});
-  };
-  const onKey = e => {
-    if(e.key === "Escape") close();
-    if(e.key === "Tab") { e.preventDefault(); overlay.querySelector(".pay-preview-close").focus(); }
-  };
-  document.addEventListener("keydown",onKey);
-  overlay.querySelector(".pay-preview-close").addEventListener("click",close);
-  overlay.addEventListener("click",e=>{if(e.target===overlay)close();});
-  overlay.querySelector(".pay-preview-close").focus({preventScroll:true});
+  source.querySelector(".pay-preview-close").addEventListener("click", () => {
+    const from = source.getBoundingClientRect().height;
+    source.classList.remove("is-payslip");
+    source.removeAttribute("aria-label");
+    source.innerHTML = original;
+    const to = source.getBoundingClientRect().height;
+    if (!reducedMotion()) source.animate([{height:`${from}px`},{height:`${to}px`}],{duration:360,easing:"cubic-bezier(.22,.75,.2,1)"});
+  });
 }
 
 function renderPaySheet(emp) {
