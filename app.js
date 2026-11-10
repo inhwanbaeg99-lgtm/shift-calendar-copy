@@ -3296,7 +3296,7 @@ function openDropdown(dd) {
   list.classList.toggle("right", list.getBoundingClientRect().right > document.documentElement.clientWidth - 8);
   const on = list.querySelector(".dd-opt.on") ?? list.firstElementChild;
   on?.focus({ preventScroll: true });
-  if (on) list.scrollTop = sel.matches(".m-payroll-month-select") ? on.offsetTop - 6 : on.offsetTop - list.clientHeight / 2 + on.offsetHeight / 2;
+  if (on) list.scrollTop = sel.matches(".m-payroll-month-select") ? (on.previousElementSibling || on).offsetTop - 6 : on.offsetTop - list.clientHeight / 2 + on.offsetHeight / 2;
 }
 function pickDropdown(opt) {
   const dd = opt.closest(".dd");
