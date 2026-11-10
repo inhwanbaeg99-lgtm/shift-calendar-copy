@@ -3143,17 +3143,37 @@ const homeHash = () => (ADMIN_SITE ? "#/calendar" : "#/");
 // 다시 그릴 때 입력 중이던 시간 칸 값을 지키는 칸들 (편집이 끝나면 칸이 사라지므로 그대로 남지 않는다)
 const KEEP_FIELDS = ["edit-start", "edit-end", "extra-name", "extra-start", "extra-end"];
 
+let calendarFitFrame = 0;
+let calendarFitObserver = null;
 function fitMobileAttendanceCalendar() {
-  if (isDesktop()) return;
-  const grid = app.querySelector(".month-picker-calendar .grid");
-  const menu = app.querySelector(".m-bubble-nav");
-  if (!grid || !menu) return;
-  const top = grid.getBoundingClientRect().top;
-  const bottom = menu.getBoundingClientRect().top;
-  grid.style.height = `${Math.max(200, bottom - top - 8)}px`;
+  cancelAnimationFrame(calendarFitFrame);
+  calendarFitFrame = requestAnimationFrame(() => {
+    if (isDesktop()) return;
+    const grid = app.querySelector(".month-picker-calendar .grid");
+    const menu = app.querySelector(".m-bubble-nav");
+    if (!grid || !menu) return;
+    // offsetTop은 진입 애니메이션 transform의 영향을 받지 않는다.
+    let top = 0;
+    for (let node = grid; node; node = node.offsetParent) top += node.offsetTop;
+    const viewport = window.visualViewport;
+    const visibleBottom = viewport ? viewport.offsetTop + viewport.height : window.innerHeight;
+    const bottom = Math.min(menu.getBoundingClientRect().top, visibleBottom);
+    const height = Math.max(140, Math.floor(bottom - top - 8));
+    if (Math.abs(grid.getBoundingClientRect().height - height) > 1) grid.style.height = `${height}px`;
+  });
+}
+function observeMobileCalendarLayout() {
+  calendarFitObserver?.disconnect();
+  if (!app.querySelector(".month-picker-calendar") || !window.ResizeObserver) return;
+  calendarFitObserver = new ResizeObserver(fitMobileAttendanceCalendar);
+  app.querySelectorAll(".m-top, .m-bubble-nav, .m-install").forEach(el => calendarFitObserver.observe(el));
 }
 window.addEventListener("resize", fitMobileAttendanceCalendar);
+window.addEventListener("orientationchange", fitMobileAttendanceCalendar);
+window.addEventListener("pageshow", fitMobileAttendanceCalendar);
 window.visualViewport?.addEventListener("resize", fitMobileAttendanceCalendar);
+window.visualViewport?.addEventListener("scroll", fitMobileAttendanceCalendar);
+document.fonts?.ready.then(fitMobileAttendanceCalendar);
 
 function render() {
   const kept = KEEP_FIELDS.map((id) => [id, document.getElementById(id)?.value]).filter(([, v]) => v);
@@ -3181,6 +3201,7 @@ function render() {
   if (period) fitPeriod(period);
   lockDemoFields();
   enhanceSelects();
+  observeMobileCalendarLayout();
   fitMobileAttendanceCalendar();
   placeNavPill();
   if (state.pageEnter && r.name === "records") countUp(app.querySelectorAll(".pay-table td.net, .m-main .net"));

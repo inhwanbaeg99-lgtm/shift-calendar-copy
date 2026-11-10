@@ -4,8 +4,8 @@
   "start_url": "/admin/#/calendar",
   "scope": "/admin/",
   "display": "standalone",
-  "background_color": "#FFFFFF",
-  "theme_color": "#FFFFFF",
+  "background_color": "#f4faff",
+  "theme_color": "#f4faff",
   "lang": "ko",
   "icons": [
     {

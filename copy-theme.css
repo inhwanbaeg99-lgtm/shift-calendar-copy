@@ -297,3 +297,6 @@ input:focus-visible, button:focus-visible, a:focus-visible { outline-color: #FF0
 }
 /* 샘플 매장 둘러보기 안내줄 숨김 */
 .demo-bar { display: none; }
+
+/* iOS 상태 표시줄 뒤까지 페이지 배경 연결 */
+html { background-color: var(--bg); }
