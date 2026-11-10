@@ -902,57 +902,10 @@ function renderHome() {
 }
 
 // 관리자 달력: 직원용 달력과 같은 화면. 출근 버튼은 없고 지난 날짜도 근무 시간을 고칠 수 있다.
-function calendarMonthHtml(offset) {
-  const d = new Date(state.year, state.month - 1 + offset, 1);
-  return `<section class="scroll-calendar-month" data-month-offset="${offset}" aria-label="${d.getFullYear()}년 ${d.getMonth() + 1}월">${renderCalendar({year:d.getFullYear(), month:d.getMonth()+1})}</section>`;
-}
 function renderAdminCalendar() {
-  if (isDesktop()) return renderAdminShell("calendar", `<div class="admin-cal">${renderCalendarCard()}</div>`, { center: true, wide: true });
-  return renderAdminShell("calendar", `<div class="admin-cal scroll-calendar"><div data-calendar-edge="before"></div><div class="scroll-calendar-months">${[-1,0,1,2].map(calendarMonthHtml).join("")}</div><div data-calendar-edge="after"></div></div>`);
+  return renderAdminShell("calendar", `<div class="admin-cal${isDesktop() ? "" : " month-picker-calendar"}">${renderCalendarCard()}</div>`, { center: true, wide: true });
 }
-let calendarScrollObserver = null;
-let calendarHeaderScroll = null;
-function setupScrollCalendar() {
-  calendarScrollObserver?.disconnect();
-  if (calendarHeaderScroll) window.removeEventListener("scroll", calendarHeaderScroll);
-  calendarHeaderScroll = null;
-  const root = app.querySelector(".scroll-calendar");
-  document.documentElement.classList.toggle("calendar-month-snap", !!root);
-  if (!root) return;
-  document.documentElement.style.setProperty("--calendar-header-height", `${app.querySelector(".m-top").getBoundingClientRect().height}px`);
-  root.querySelector('[data-month-offset="0"]').scrollIntoView({block:"start"});
-  calendarHeaderScroll = () => {
-    const title = app.querySelector(".m-calendar-month-select");
-    if (!title) return;
-    const top = app.querySelector(".m-top").getBoundingClientRect().bottom;
-    // 두 달 시작점의 중간을 넘었을 때 상단 연월도 다음 달로 바꾼다.
-    const visible = Array.from(root.querySelectorAll(".scroll-calendar-month")).reduce((best, el) =>
-      !best || Math.abs(el.getBoundingClientRect().top-top) < Math.abs(best.getBoundingClientRect().top-top) ? el : best, null);
-    if (visible) {
-      const period = new Date(state.year, state.month - 1 + Number(visible.dataset.monthOffset), 1);
-      title.value = `${period.getFullYear()}-${String(period.getMonth()+1).padStart(2,"0")}`;
-      const label = title.closest(".dd")?.querySelector(".dd-btn span");
-      if (label) label.textContent = visible.querySelector(".cal-title").textContent;
-    }
-  };
-  window.addEventListener("scroll", calendarHeaderScroll, {passive:true});
-  calendarHeaderScroll();
-  if (!window.IntersectionObserver) return;
-  let first = -1, last = 2;
-  const months = root.querySelector(".scroll-calendar-months");
-  calendarScrollObserver = new IntersectionObserver(entries => {
-    for (const entry of entries) {
-      if (!entry.isIntersecting) continue;
-      if (entry.target.dataset.calendarEdge === "before") {
-        const anchor = months.firstElementChild;
-        const before = anchor.getBoundingClientRect().top;
-        months.insertAdjacentHTML("afterbegin", calendarMonthHtml(--first));
-        window.scrollBy(0, anchor.getBoundingClientRect().top - before);
-      } else months.insertAdjacentHTML("beforeend", calendarMonthHtml(++last));
-    }
-  }, {rootMargin:"250px 0px"});
-  root.querySelectorAll("[data-calendar-edge]").forEach(el => calendarScrollObserver.observe(el));
-}
+
 
 function renderDayPage(date) {
   const page = `
@@ -2879,7 +2832,7 @@ const TOURS = {
         ],
   calendar: (pc) => [
     ...(pc ? [] : [{ sel: ".m-today", title: "오늘 근무자", text: "오늘 일할 사람과 출근했는지가 보여요. 누르면 오늘 화면으로 가요." }]),
-    { sel: pc ? ".cal-head" : ".m-top .dd", title: "달 바꾸기", text: pc ? "화살표로 지난달, 다음 달을 봐요." : "상단 연월을 누르면 월 선택 목록이 펼쳐져요. 달력을 반 이상 아래로 넘겨도 다음 달로 이동해요. 위로 넘기면 지난달을 볼 수 있어요. 날짜를 누르면 그날의 상세 화면이 열려요." },
+    { sel: pc ? ".cal-head" : ".m-top .dd", title: "달 바꾸기", text: pc ? "화살표로 지난달, 다음 달을 봐요." : "상단 연월을 누르면 월 선택 목록이 펼쳐져요. 원하는 달을 선택하면 달력이 바뀌어요. 날짜를 누르면 그날의 상세 화면이 열려요." },
     { sel: [".cell:has(.day-num.today)", ".grid .cell"], title: "날짜 칸", text: "그날 출근 기록이 이름과 시간으로 보여요. 근무표보다 <b style=\"color:var(--more)\">더 일하면 파랑</b>, <b style=\"color:var(--red)\">덜 일하면 빨강</b>이에요. 날짜를 누르면 그날이 열려요." },
     { scene: "day", sel: ".date-box", title: "그날 출근 기록", text: "날짜를 누르면 이렇게 열려요. 여기 보이는 출퇴근 시간이 급여에 들어가요. 찍은 시각을 <b>10분 단위로 반올림</b>한 시간이에요(13:52 → 13:50, 13:55 → 14:00)." },
     { scene: "day", sel: ".staff", title: "근무 예정", text: "그날 근무표에 있는 사람이에요. 이름 밑 시간은 <b>근무표 시간</b>이라 출퇴근 기록을 고쳐도 바뀌지 않아요." },
@@ -3214,7 +3167,6 @@ function render() {
 
   const period = document.querySelector(".sc-period");
   if (period) fitPeriod(period);
-  setupScrollCalendar();
   lockDemoFields();
   enhanceSelects();
   placeNavPill();

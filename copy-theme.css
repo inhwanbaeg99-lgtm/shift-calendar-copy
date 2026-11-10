@@ -291,3 +291,7 @@ input:focus-visible, button:focus-visible, a:focus-visible { outline-color: #FF0
   .m-calendar-top .dd-btn { padding: 6px 10px; min-height: 44px; border-radius: 12px; }
   .m-top.m-calendar-top { column-gap: 6px; }
 }
+
+@media (max-width: 767px) {
+  .m-screen-calendar .month-picker-calendar .cal-head { display: none; }
+}
