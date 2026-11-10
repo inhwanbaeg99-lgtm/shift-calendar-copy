@@ -662,8 +662,9 @@ function sixWeekChips() {
   return Math.max(1, Math.floor((cell - 38) / 14.64) - 1);
 }
 
-function renderCalendar() {
-  const { year, month, selectedDate } = state;
+function renderCalendar(period = state) {
+  const { year, month } = period;
+  const { selectedDate } = state;
   const today = todayDateString();
   const startWeekday = new Date(year, month - 1, 1).getDay();
   const daysInMonth = new Date(year, month, 0).getDate();
@@ -901,8 +902,35 @@ function renderHome() {
 }
 
 // 관리자 달력: 직원용 달력과 같은 화면. 출근 버튼은 없고 지난 날짜도 근무 시간을 고칠 수 있다.
+function calendarMonthHtml(offset) {
+  const d = new Date(state.year, state.month - 1 + offset, 1);
+  return `<section class="scroll-calendar-month" data-month-offset="${offset}" aria-label="${d.getFullYear()}년 ${d.getMonth() + 1}월">${renderCalendar({year:d.getFullYear(), month:d.getMonth()+1})}</section>`;
+}
 function renderAdminCalendar() {
-  return renderAdminShell("calendar", `<div class="admin-cal">${renderCalendarCard()}</div>`, { center: true, wide: true });
+  if (isDesktop()) return renderAdminShell("calendar", `<div class="admin-cal">${renderCalendarCard()}</div>`, { center: true, wide: true });
+  return renderAdminShell("calendar", `<div class="admin-cal scroll-calendar"><div data-calendar-edge="before"></div><div class="scroll-calendar-months">${[-1,0,1,2].map(calendarMonthHtml).join("")}</div><div data-calendar-edge="after"></div></div>`);
+}
+let calendarScrollObserver = null;
+function setupScrollCalendar() {
+  calendarScrollObserver?.disconnect();
+  const root = app.querySelector(".scroll-calendar");
+  if (!root) return;
+  root.querySelector('[data-month-offset="0"]').scrollIntoView({block:"start"});
+  if (!window.IntersectionObserver) return;
+  let first = -1, last = 2;
+  const months = root.querySelector(".scroll-calendar-months");
+  calendarScrollObserver = new IntersectionObserver(entries => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      if (entry.target.dataset.calendarEdge === "before") {
+        const anchor = months.firstElementChild;
+        const before = anchor.getBoundingClientRect().top;
+        months.insertAdjacentHTML("afterbegin", calendarMonthHtml(--first));
+        window.scrollBy(0, anchor.getBoundingClientRect().top - before);
+      } else months.insertAdjacentHTML("beforeend", calendarMonthHtml(++last));
+    }
+  }, {rootMargin:"250px 0px"});
+  root.querySelectorAll("[data-calendar-edge]").forEach(el => calendarScrollObserver.observe(el));
 }
 
 function renderDayPage(date) {
@@ -1063,8 +1091,8 @@ function renderMobileShell(active, content) {
   return `
     <header class="m-top">
       <button type="button" class="m-tour" data-action="start-tour" aria-label="도움말" title="도움말">?</button>
-      <b class="m-store">${esc(storeName())}</b>
-      ${demoLoaded ? `<a class="m-login" href="#/login" aria-label="로그인" title="로그인">${accountIcon}</a>` : `<button type="button" class="m-logout" data-action="logout" aria-label="로그아웃" title="로그아웃">${logoutIcon}</button>`}
+      <span class="m-store" aria-hidden="true"></span>
+      ${demoLoaded ? `<a class="m-login" href="#/login" aria-label="로그인" title="로그인">${accountIcon}</a>` : `<a class="m-login" href="#/mypage" aria-label="마이페이지" title="마이페이지">${accountIcon}</a>`}
     </header>
     ${demoLoaded ? "" : `<div class="m-staff-shortcut">${staffCalLink("m-staff-link")}</div>`}
     ${demoLoaded ? `<p class="demo-bar">샘플 매장을 둘러보는 중이에요. <a href="#/signup">매장 등록</a> · <a href="#/login">로그인</a></p>` : ""}
@@ -1113,6 +1141,14 @@ function weeklySummary(e) {
   const days = [1, 2, 3, 4, 5, 6, 0].filter((wd) => e.weekly[wd]);
   if (!days.length) return "근무 요일 없음";
   return days.map((wd) => `${WEEKDAYS[wd]} ${rangeLabel(e.weekly[wd])}`).join(" · ");
+}
+
+function renderMyPage() {
+  const email = cloud?.auth.currentUser?.email || "";
+  return renderAdminShell("mypage", `
+    <div class="m-pay-detail-heading"><a class="m-pay-back" href="#/calendar" aria-label="출퇴근으로 돌아가기">${ICON_PREV}</a><div class="m-pay-person"><h1>마이페이지</h1></div></div>
+    <section class="m-profile-card"><h2>${esc(storeName())}</h2>${email ? `<p>${esc(email)}</p>` : ""}<p>매장 코드 ${codeLabel()}</p></section>
+    <button type="button" class="btn-ghost m-profile-logout" data-action="logout">로그아웃</button>`);
 }
 
 function renderEmployeesMobile() {
@@ -2810,7 +2846,7 @@ const TOURS = {
         ],
   calendar: (pc) => [
     ...(pc ? [] : [{ sel: ".m-today", title: "오늘 근무자", text: "오늘 일할 사람과 출근했는지가 보여요. 누르면 오늘 화면으로 가요." }]),
-    { sel: ".cal-head", title: "달 바꾸기", text: "화살표로 지난달, 다음 달을 봐요." },
+    { sel: ".cal-head", title: "달 바꾸기", text: pc ? "화살표로 지난달, 다음 달을 봐요." : "달력을 아래로 스크롤하면 다음 달, 위로 올리면 지난달이 이어져요. 날짜를 누르면 그날의 상세 화면이 열려요." },
     { sel: [".cell:has(.day-num.today)", ".grid .cell"], title: "날짜 칸", text: "그날 출근 기록이 이름과 시간으로 보여요. 근무표보다 <b style=\"color:var(--more)\">더 일하면 파랑</b>, <b style=\"color:var(--red)\">덜 일하면 빨강</b>이에요. 날짜를 누르면 그날이 열려요." },
     { scene: "day", sel: ".date-box", title: "그날 출근 기록", text: "날짜를 누르면 이렇게 열려요. 여기 보이는 출퇴근 시간이 급여에 들어가요. 찍은 시각을 <b>10분 단위로 반올림</b>한 시간이에요(13:52 → 13:50, 13:55 → 14:00)." },
     { scene: "day", sel: ".staff", title: "근무 예정", text: "그날 근무표에 있는 사람이에요. 이름 밑 시간은 <b>근무표 시간</b>이라 출퇴근 기록을 고쳐도 바뀌지 않아요." },
@@ -3111,7 +3147,7 @@ function route() {
   if (employee) return { name: "employee-detail", id: decodeURIComponent(employee[1]) };
   const pay = hash.match(/^\/records\/([^/]+)\/(\d{4}-(?:0[1-9]|1[0-2]))$/);
   if (pay) return { name: "pay-detail", id: decodeURIComponent(pay[1]), month: pay[2] };
-  const page = { "/records": "records", "/schedule": "schedule", "/calendar": "calendar" }[hash];
+  const page = { "/mypage": "mypage", "/records": "records", "/schedule": "schedule", "/calendar": "calendar" }[hash];
   return { name: page ?? "employees" };
 }
 
@@ -3129,6 +3165,7 @@ function render() {
   else if (r.name === "pick") app.innerHTML = renderPick();
   else if (r.name === "day") app.innerHTML = renderDayPage(r.date);
   else if (r.name === "calendar") app.innerHTML = renderAdminCalendar();
+  else if (r.name === "mypage") app.innerHTML = renderMyPage();
   else if (r.name === "employees") app.innerHTML = renderEmployees();
   else if (r.name === "employee-detail") app.innerHTML = renderEmployeePage(r.id);
   else if (r.name === "records") app.innerHTML = renderRecords();
@@ -3144,6 +3181,7 @@ function render() {
 
   const period = document.querySelector(".sc-period");
   if (period) fitPeriod(period);
+  setupScrollCalendar();
   lockDemoFields();
   enhanceSelects();
   placeNavPill();
@@ -3561,6 +3599,8 @@ function selectDate(date) {
   resetDayUi();
   state.dayEnter = true;
   if (!isDesktop()) {
+    state.year = Number(date.slice(0, 4));
+    state.month = Number(date.slice(5, 7));
     navigate(`#/day/${date}`);
     return;
   }

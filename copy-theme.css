@@ -250,3 +250,17 @@ input:focus-visible, button:focus-visible, a:focus-visible { outline-color: #FF0
 }
 /* 숫자 글꼴의 아래쪽 여백을 보정해 원 안에서 시각적으로 중앙 정렬 */
 .date-morph-number { transform: none; }
+
+.m-profile-card { background: var(--paper); border: 1px solid var(--line); border-radius: 18px; padding: 22px; }
+.m-profile-card h2 { margin: 0 0 12px; font-size: 20px; }
+.m-profile-card p { color: var(--ink-sub); overflow-wrap: anywhere; }
+.m-profile-logout { width: 100%; margin-top: 20px; color: #FF05BF; }
+@media (max-width: 767px) {
+  .scroll-calendar-month { scroll-margin-top: 80px; padding: 6px 0 28px; }
+  .scroll-calendar-month + .scroll-calendar-month { border-top: 1px solid var(--line); padding-top: 24px; }
+  .m-screen-calendar .scroll-calendar .cal-head { justify-content: flex-start; margin: 0 12px 22px; }
+  .scroll-calendar .cal-title { font-size: 23px; font-weight: 700; }
+  .scroll-calendar .cal-head .round-btn { display: none; }
+  .scroll-calendar [data-calendar-edge] { height: 1px; }
+  .m-top .m-store { min-height: 40px; }
+}
