@@ -928,8 +928,8 @@ function renderAdminShell(active, content, { center = false, wide = false } = {}
       <span class="nav-pill" aria-hidden="true"></span>
       <div class="store-tag"><b>${esc(storeName())}</b>${demoLoaded ? "" : staffCalLink()}</div>
       ${link("#/employees", "직원", "employees")}
-      ${link("#/schedule", "근무표", "schedule")}
-      ${link("#/calendar", "달력", "calendar")}
+      ${link("#/schedule", "스케줄", "schedule")}
+      ${link("#/calendar", "출·퇴근", "calendar")}
       ${link("#/records", "급여", "records")}
       ${demoLoaded ? `<a class="logout login-btn" href="#/login">로그인</a>` : `<button type="button" class="logout" data-action="logout">로그아웃</button>`}
     </nav>
@@ -1088,7 +1088,7 @@ function renderMobileShell(active, content) {
     <nav class="m-tabbar m-text-nav" style="--nav-position:${navIndex}" aria-label="관리자 메뉴">
       <div class="m-text-links">
         <span class="m-text-pill" aria-hidden="true"></span>
-        ${tab("calendar", "출퇴근", 0)}${tab("schedule", "근무표", 1)}${tab("employees", "직원", 2)}${tab("records", "급여", 3)}
+        ${tab("calendar", "출·퇴근", 0)}${tab("schedule", "스케줄", 1)}${tab("employees", "직원", 2)}${tab("records", "급여", 3)}
       </div>
     </nav>
     ${renderSheet()}
@@ -3407,6 +3407,16 @@ async function animateDateIntoDetails(date) {
   }
 }
 
+let pendingTabShift = 0;
+function navigateMobileTab(hash) {
+  const order = ["calendar","schedule","employees","records"];
+  const previous = app.querySelector(".m-text-nav .m-tab.active")?.getAttribute("href");
+  const from = order.indexOf((previous || "").replace("#/",""));
+  const to = order.indexOf(hash.replace("#/",""));
+  pendingTabShift = from >= 0 && to >= 0 ? Math.sign(to-from) : 0;
+  navigate(hash);
+}
+
 window.addEventListener("hashchange", () => {
   const wasDay = !!app.querySelector(".day-page");
   const nextPage = route().name;
@@ -3420,7 +3430,19 @@ window.addEventListener("hashchange", () => {
   state.allowDraft = null;
   state.slotEdit = null;
   state.helpOpen = {};
-  if (smoothDay && !wasDay) {
+  const shift = pendingTabShift;
+  pendingTabShift = 0;
+  if (shift && !isDesktop() && !reducedMotion()) {
+    state.pageEnter = false;
+    if (document.startViewTransition) {
+      document.documentElement.dataset.tabShift = shift > 0 ? "next" : "previous";
+      const transition = document.startViewTransition(() => render());
+      transition.finished.finally(() => { delete document.documentElement.dataset.tabShift; });
+    } else {
+      render();
+      app.querySelector(".m-main")?.animate([{transform:`translateX(${shift*60}px)`,opacity:0},{transform:"translateX(0)",opacity:1}],{duration:300,easing:"cubic-bezier(.22,.75,.2,1)"});
+    }
+  } else if (smoothDay && !wasDay) {
     animateDateIntoDetails(route().date);
   } else if (smoothDay && document.startViewTransition) {
     document.documentElement.dataset.dayTransition = wasDay ? "back" : "forward";
@@ -3671,7 +3693,7 @@ function finishTextNavDrag(e) {
   textNavSuppressUntil=Date.now()+400;
   const index=Math.round(drag.position);
   drag.nav.style.setProperty("--nav-position",index);
-  navigate(["#/calendar","#/schedule","#/employees","#/records"][index]);
+  navigateMobileTab(["#/calendar","#/schedule","#/employees","#/records"][index]);
 }
 app.addEventListener("pointerup",finishTextNavDrag);
 app.addEventListener("pointercancel",finishTextNavDrag);
@@ -3683,7 +3705,7 @@ app.addEventListener("click",e=>{
   const nav=link.closest(".m-text-nav");
   nav.style.setProperty("--nav-position",Array.from(nav.querySelectorAll(".m-tab")).indexOf(link));
   const href=link.getAttribute("href");
-  setTimeout(()=>navigate(href),180);
+  navigateMobileTab(href);
 },true);
 
 // 모바일 메뉴는 데이터 재렌더 없이 열고 닫아 입력 중인 내용을 유지한다.

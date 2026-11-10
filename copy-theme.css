@@ -360,3 +360,15 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
 @media (max-width: 767px) {
   .m-top, .m-top.m-calendar-top, .m-top.m-day-top { grid-template-rows: 44px; align-items: center; }
 }
+
+@media (max-width: 767px) and (prefers-reduced-motion: no-preference) {
+  html[data-tab-shift] .m-main { view-transition-name: tab-page; }
+  html[data-tab-shift]::view-transition-group(tab-page) { animation-duration: 320ms; overflow: clip; }
+  html[data-tab-shift]::view-transition-old(tab-page) { animation: tab-page-out 320ms cubic-bezier(.22,.75,.2,1) both; }
+  html[data-tab-shift]::view-transition-new(tab-page) { animation: tab-page-in 320ms cubic-bezier(.22,.75,.2,1) both; }
+  html[data-tab-shift="previous"] { --tab-slide-direction: -1; }
+  html[data-tab-shift="next"] { --tab-slide-direction: 1; }
+  html[data-tab-shift]::view-transition-old(root), html[data-tab-shift]::view-transition-new(root) { animation: none; }
+}
+@keyframes tab-page-out { to { transform: translateX(calc(-100% * var(--tab-slide-direction))); opacity: 0; } }
+@keyframes tab-page-in { from { transform: translateX(calc(100% * var(--tab-slide-direction))); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
