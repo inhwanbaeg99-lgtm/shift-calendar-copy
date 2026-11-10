@@ -917,13 +917,17 @@ function setupScrollCalendar() {
   if (calendarHeaderScroll) window.removeEventListener("scroll", calendarHeaderScroll);
   calendarHeaderScroll = null;
   const root = app.querySelector(".scroll-calendar");
+  document.documentElement.classList.toggle("calendar-month-snap", !!root);
   if (!root) return;
+  document.documentElement.style.setProperty("--calendar-header-height", `${app.querySelector(".m-top").getBoundingClientRect().height}px`);
   root.querySelector('[data-month-offset="0"]').scrollIntoView({block:"start"});
   calendarHeaderScroll = () => {
     const title = app.querySelector(".m-calendar-month-title");
     if (!title) return;
-    const top = app.querySelector(".m-top").getBoundingClientRect().bottom + 40;
-    const visible = Array.from(root.querySelectorAll(".scroll-calendar-month")).find(el => el.getBoundingClientRect().bottom > top);
+    const top = app.querySelector(".m-top").getBoundingClientRect().bottom;
+    // 두 달 시작점의 중간을 넘었을 때 상단 연월도 다음 달로 바꾼다.
+    const visible = Array.from(root.querySelectorAll(".scroll-calendar-month")).reduce((best, el) =>
+      !best || Math.abs(el.getBoundingClientRect().top-top) < Math.abs(best.getBoundingClientRect().top-top) ? el : best, null);
     if (visible) title.textContent = visible.querySelector(".cal-title").textContent;
   };
   window.addEventListener("scroll", calendarHeaderScroll, {passive:true});
@@ -2859,7 +2863,7 @@ const TOURS = {
         ],
   calendar: (pc) => [
     ...(pc ? [] : [{ sel: ".m-today", title: "오늘 근무자", text: "오늘 일할 사람과 출근했는지가 보여요. 누르면 오늘 화면으로 가요." }]),
-    { sel: pc ? ".cal-head" : ".m-calendar-month-title", title: "달 바꾸기", text: pc ? "화살표로 지난달, 다음 달을 봐요." : "달력을 아래로 스크롤하면 다음 달, 위로 올리면 지난달이 이어져요. 날짜를 누르면 그날의 상세 화면이 열려요." },
+    { sel: pc ? ".cal-head" : ".m-calendar-month-title", title: "달 바꾸기", text: pc ? "화살표로 지난달, 다음 달을 봐요." : "달력을 반 이상 아래로 넘기면 다음 달에 맞춰지고, 반보다 적게 넘기면 현재 달로 돌아와요. 위로 넘기면 지난달을 볼 수 있어요. 날짜를 누르면 그날의 상세 화면이 열려요." },
     { sel: [".cell:has(.day-num.today)", ".grid .cell"], title: "날짜 칸", text: "그날 출근 기록이 이름과 시간으로 보여요. 근무표보다 <b style=\"color:var(--more)\">더 일하면 파랑</b>, <b style=\"color:var(--red)\">덜 일하면 빨강</b>이에요. 날짜를 누르면 그날이 열려요." },
     { scene: "day", sel: ".date-box", title: "그날 출근 기록", text: "날짜를 누르면 이렇게 열려요. 여기 보이는 출퇴근 시간이 급여에 들어가요. 찍은 시각을 <b>10분 단위로 반올림</b>한 시간이에요(13:52 → 13:50, 13:55 → 14:00)." },
     { scene: "day", sel: ".staff", title: "근무 예정", text: "그날 근무표에 있는 사람이에요. 이름 밑 시간은 <b>근무표 시간</b>이라 출퇴근 기록을 고쳐도 바뀌지 않아요." },

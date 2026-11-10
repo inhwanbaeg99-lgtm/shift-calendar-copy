@@ -272,3 +272,8 @@ input:focus-visible, button:focus-visible, a:focus-visible { outline-color: #FF0
   .m-calendar-top .m-store { min-width: 0; }
   .m-screen-calendar .scroll-calendar .cal-head { display: none; }
 }
+
+@media (max-width: 767px) {
+  html.calendar-month-snap { scroll-snap-type: y mandatory; scroll-padding-top: var(--calendar-header-height, 64px); }
+  .calendar-month-snap .scroll-calendar-month { scroll-snap-align: start; scroll-snap-stop: always; scroll-margin-top: 0; }
+}
