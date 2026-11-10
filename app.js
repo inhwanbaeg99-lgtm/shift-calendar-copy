@@ -1364,6 +1364,13 @@ function previewPayslipFromAmount(id) {
   const source = app.querySelector(".m-pay-amount");
   if (!emp || !source || source.classList.contains("is-payslip")) return;
   const original = source.innerHTML;
+  const amount = source.querySelector(":scope > strong");
+  const amountRange = document.createRange();
+  if (amount) amountRange.selectNodeContents(amount);
+  const amountRect = amount ? amountRange.getBoundingClientRect() : null;
+  const amountStyle = amount ? getComputedStyle(amount) : null;
+  const amountFont = amountStyle ? {family:amountStyle.fontFamily,size:amountStyle.fontSize,weight:amountStyle.fontWeight,color:amountStyle.color} : null;
+  const amountText = amount?.textContent;
   const month = state.payroll.month;
   const previousHeight = source.getBoundingClientRect().height;
   source.classList.add("is-payslip");
@@ -1372,11 +1379,37 @@ function previewPayslipFromAmount(id) {
   const paper = source.querySelector(".pay-inline-paper");
   paper.style.zoom = Math.min(1,source.clientWidth/794);
   const expandedHeight = source.getBoundingClientRect().height;
+  let clearAmountMorph = () => {};
   if (!reducedMotion()) {
+    const target = source.querySelector(".ps-net strong");
+    if (amountRect && amountFont && target && target.textContent.trim() === amountText.trim()) {
+      const range = document.createRange();
+      range.selectNodeContents(target);
+      const to = range.getBoundingClientRect();
+      const color = getComputedStyle(target).color;
+      const svg = document.createElementNS("http://www.w3.org/2000/svg","svg");
+      const text = document.createElementNS("http://www.w3.org/2000/svg","text");
+      svg.setAttribute("class","pay-amount-morph");
+      svg.setAttribute("preserveAspectRatio","none");
+      svg.setAttribute("aria-hidden","true");
+      text.textContent = amountText;
+      Object.assign(text.style,{fontFamily:amountFont.family,fontSize:amountFont.size,fontWeight:amountFont.weight,fill:"currentColor"});
+      svg.append(text);
+      document.body.append(svg);
+      const ink = text.getBBox();
+      svg.setAttribute("viewBox",`${ink.x} ${ink.y} ${ink.width} ${ink.height}`);
+      const frame = rect => ({left:`${rect.left}px`,top:`${rect.top}px`,width:`${rect.width}px`,height:`${rect.height}px`});
+      Object.assign(svg.style,{...frame(amountRect),color:amountFont.color});
+      target.style.visibility="hidden";
+      const move=svg.animate([{...frame(amountRect),color:amountFont.color},{...frame(to),color}],{duration:540,easing:"cubic-bezier(.22,.75,.2,1)",fill:"forwards"});
+      clearAmountMorph=()=>{target.style.removeProperty("visibility");svg.remove();};
+      move.finished.then(clearAmountMorph,clearAmountMorph);
+    }
     source.animate([{height:`${previousHeight}px`},{height:`${expandedHeight}px`}],{duration:460,easing:"cubic-bezier(.22,.75,.2,1)"});
     paper.animate([{opacity:0},{opacity:1}],{duration:260,delay:220,fill:"both"});
   }
   source.querySelector(".pay-preview-close").addEventListener("click", () => {
+    clearAmountMorph();
     const from = source.getBoundingClientRect().height;
     source.classList.remove("is-payslip");
     source.removeAttribute("aria-label");
