@@ -1101,7 +1101,7 @@ function mobilePayrollMonthSelect() {
   const earliest = Math.min(base-60, monthIndex(selected), ...store.records.map(r=>monthIndex(r.date)).filter(Number.isFinite));
   const latest = Math.max(base+12, monthIndex(selected));
   let options = "";
-  for (let i=latest;i>=earliest;i--) {
+  for (let i=earliest;i<=latest;i++) {
     const y=Math.floor(i/12),m=i%12+1,value=`${y}-${String(m).padStart(2,"0")}`;
     options += `<option value="${value}"${value===selected ? " selected" : ""}>${y}년 ${m}월</option>`;
   }
