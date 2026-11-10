@@ -3153,19 +3153,13 @@ function fitMobileAttendanceCalendar() {
     const grid = app.querySelector(".month-picker-calendar .grid");
     const menu = app.querySelector(".m-bubble-nav");
     if (!grid || !menu) return;
-    // offsetTop은 진입 애니메이션 transform의 영향을 받지 않는다.
-    let top = 0;
-    for (let node = grid; node; node = node.offsetParent) top += node.offsetTop;
-    // Safari 당겨서 새로고침 중의 offsetTop/고무줄 좌표는 높이에 반영하지 않는다.
-    const viewportHeight = document.documentElement.clientHeight || window.innerHeight;
     const menuStyle = getComputedStyle(menu);
     const menuHeight = parseFloat(menuStyle.height) || menu.offsetHeight;
     const menuBottom = parseFloat(menuStyle.bottom) || 0;
-    const bottom = viewportHeight - menuBottom - menuHeight;
-    const height = Math.max(140, Math.min(viewportHeight, Math.floor(bottom - top - 8)));
     const main = grid.closest(".m-main");
     if (main) main.style.paddingBottom = `${menuHeight + menuBottom + 8}px`;
-    if (Math.abs(grid.getBoundingClientRect().height - height) > 1) grid.style.height = `${height}px`;
+    // 날짜 높이는 고정된 앱 영역 안에서 CSS flex로 균등 분배한다.
+    grid.style.removeProperty("height");
   });
 }
 function observeMobileCalendarLayout() {
@@ -3185,6 +3179,7 @@ function render() {
   const kept = KEEP_FIELDS.map((id) => [id, document.getElementById(id)?.value]).filter(([, v]) => v);
   const focusedId = document.activeElement?.id;
   const r = route();
+  document.documentElement.classList.toggle("attendance-viewport", !isDesktop() && r.name === "calendar");
   if (r.name === "lock") app.innerHTML = renderLock();
   else if (r.name === "pick") app.innerHTML = renderPick();
   else if (r.name === "day") app.innerHTML = renderDayPage(r.date);

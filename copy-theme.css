@@ -317,3 +317,20 @@ html { background-color: var(--bg); }
 }
 /* 로딩·로그인 화면의 큰 로고 뒤 핫핑크 그림자 */
 .logo.big { box-shadow: 0 10px 30px #ff05bf4d; }
+
+/* 스크롤 기능은 유지하면서 앱 내부 스크롤바만 숨김 */
+html, body, body * { scrollbar-width: none; }
+body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { display: none; width: 0; height: 0; }
+@media (max-width: 767px) {
+  html.attendance-viewport, .attendance-viewport body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+  .attendance-viewport body { position: fixed; inset: 0; width: 100%; }
+  .attendance-viewport #app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; min-height: 0; overflow: hidden; }
+  .attendance-viewport .m-top, .attendance-viewport .m-install { flex-shrink: 0; }
+  .attendance-viewport .m-screen-calendar { flex: 1; min-height: 0; overflow: hidden; box-sizing: border-box; }
+  .attendance-viewport .month-picker-calendar,
+  .attendance-viewport .month-picker-calendar .card { height: 100%; min-height: 0; }
+  .attendance-viewport .month-picker-calendar .cal-wrap { display: flex; flex-direction: column; min-height: 0; box-sizing: border-box; }
+  .attendance-viewport .month-picker-calendar .grid { flex: 1; height: auto !important; min-height: 0; }
+  .attendance-viewport .month-picker-calendar .cell,
+  .attendance-viewport .month-picker-calendar .empty-cell { min-height: 0; }
+}
