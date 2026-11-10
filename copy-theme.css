@@ -300,3 +300,10 @@ input:focus-visible, button:focus-visible, a:focus-visible { outline-color: #FF0
 
 /* iOS 상태 표시줄 뒤까지 페이지 배경 연결 */
 html { background-color: var(--bg); }
+
+@media (max-width: 767px) {
+  .m-top.m-day-top { grid-template-columns: 40px 40px minmax(0,1fr) 40px; gap: 6px; }
+  .m-day-top .m-day-back { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 0; border: 0; background: transparent; color: var(--ink); }
+  .m-day-top .m-store { min-width: 0; }
+  .m-screen-calendar .day-page .back-btn { display: none; }
+}
