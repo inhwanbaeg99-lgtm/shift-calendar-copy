@@ -1,8 +1,8 @@
 {
   "name": "콕 관리자",
   "short_name": "콕 관리자",
-  "start_url": "./",
-  "scope": "./",
+  "start_url": "/admin/#/calendar",
+  "scope": "/admin/",
   "display": "standalone",
   "background_color": "#FFFFFF",
   "theme_color": "#FFFFFF",
@@ -26,5 +26,6 @@
       "type": "image/png",
       "purpose": "maskable"
     }
-  ]
+  ],
+  "id": "/admin/"
 }

@@ -13,9 +13,14 @@
         location.replace("https://kokwork-copy.web.app" + location.pathname.replace(/^\/shift-calendar/, "") + (qs ? "?" + qs : "") + location.hash);
       }
     </script>
+    <script>
+      // Safari 홈 화면 추가 시 관리자 설치 주소가 루트로 해석되지 않도록 고정
+      if (location.pathname === "/admin") location.replace("/admin/" + location.search + location.hash);
+    </script>
     <title>콕 관리자</title>
     <meta name="apple-mobile-web-app-title" content="콕 관리자" />
-    <link rel="manifest" href="manifest.json" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <link rel="manifest" href="/admin/manifest.json" />
     <meta name="description" content="직원 · 근무표 · 달력 · 급여" />
     <meta name="robots" content="noindex" />
     <meta name="theme-color" content="#FFFFFF" />

@@ -4242,7 +4242,7 @@ const blockDemo = (e) => {
   showToast("둘러보기 중이에요. 로그인하면 쓸 수 있어요.");
 };
 // 보기만 바꾸는 입력칸 (급여 화면의 직원 선택)
-const demoViewField = (t) => t.dataset?.payroll !== undefined;
+const demoViewField = (t) => t.dataset?.payroll !== undefined || t.dataset?.calendarMonth !== undefined;
 // 둘러보기 화면인지 (로그인·매장 등록 화면은 막지 않는다)
 const inDemo = (t) => demoLoaded && ADMIN_SITE && !t.closest?.(".lock-page");
 
