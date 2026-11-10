@@ -911,11 +911,23 @@ function renderAdminCalendar() {
   return renderAdminShell("calendar", `<div class="admin-cal scroll-calendar"><div data-calendar-edge="before"></div><div class="scroll-calendar-months">${[-1,0,1,2].map(calendarMonthHtml).join("")}</div><div data-calendar-edge="after"></div></div>`);
 }
 let calendarScrollObserver = null;
+let calendarHeaderScroll = null;
 function setupScrollCalendar() {
   calendarScrollObserver?.disconnect();
+  if (calendarHeaderScroll) window.removeEventListener("scroll", calendarHeaderScroll);
+  calendarHeaderScroll = null;
   const root = app.querySelector(".scroll-calendar");
   if (!root) return;
   root.querySelector('[data-month-offset="0"]').scrollIntoView({block:"start"});
+  calendarHeaderScroll = () => {
+    const title = app.querySelector(".m-calendar-month-title");
+    if (!title) return;
+    const top = app.querySelector(".m-top").getBoundingClientRect().bottom + 40;
+    const visible = Array.from(root.querySelectorAll(".scroll-calendar-month")).find(el => el.getBoundingClientRect().bottom > top);
+    if (visible) title.textContent = visible.querySelector(".cal-title").textContent;
+  };
+  window.addEventListener("scroll", calendarHeaderScroll, {passive:true});
+  calendarHeaderScroll();
   if (!window.IntersectionObserver) return;
   let first = -1, last = 2;
   const months = root.querySelector(".scroll-calendar-months");
@@ -1089,7 +1101,8 @@ function renderMobileShell(active, content) {
   const accountIcon = '<svg class="m-account-symbol" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-4 0-8 2-8 5v2h16v-2c0-3-4-5-8-5z"/></svg>';
   const logoutIcon = '<svg class="m-exit-symbol" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>';
   return `
-    <header class="m-top">
+    <header class="m-top${route().name === "calendar" ? " m-calendar-top" : ""}">
+      ${route().name === "calendar" ? `<b class="m-calendar-month-title">${state.year}년 ${state.month}월</b>` : ""}
       <button type="button" class="m-tour" data-action="start-tour" aria-label="도움말" title="도움말">?</button>
       <span class="m-store" aria-hidden="true"></span>
       ${demoLoaded ? `<a class="m-login" href="#/login" aria-label="로그인" title="로그인">${accountIcon}</a>` : `<a class="m-login" href="#/mypage" aria-label="마이페이지" title="마이페이지">${accountIcon}</a>`}

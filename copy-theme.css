@@ -264,3 +264,11 @@ input:focus-visible, button:focus-visible, a:focus-visible { outline-color: #FF0
   .scroll-calendar [data-calendar-edge] { height: 1px; }
   .m-top .m-store { min-height: 40px; }
 }
+
+@media (max-width: 767px) {
+  .m-top.m-calendar-top { grid-template-columns: max-content 40px minmax(0,1fr) 40px; gap: 4px; }
+  .m-calendar-month-title { font-size: 24px; font-weight: 700; letter-spacing: -.035em; white-space: nowrap; }
+  .m-calendar-top .m-tour { justify-self: start; }
+  .m-calendar-top .m-store { min-width: 0; }
+  .m-screen-calendar .scroll-calendar .cal-head { display: none; }
+}
