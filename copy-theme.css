@@ -436,3 +436,4 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
 .m-pay-amount.is-payslip .ps-top { padding-bottom: 14px; }
 .m-pay-amount.is-payslip .ps-name { margin-top: 32px; }
 .m-pay-amount.is-payslip .ps-foot { padding-top: 28px; }
+.m-payslip-preview-btn { min-width: 56px; box-sizing: border-box; }
