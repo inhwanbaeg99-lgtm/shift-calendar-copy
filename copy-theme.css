@@ -423,23 +423,14 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
 .m-pay-detail-summary { text-align: center; margin: 0 0 14px; font-size: 13px; color: var(--ink-sub); }
 .m-pay-amount.is-payslip { padding: 0; background: #FFFFFF; overflow: hidden; border: 1px solid var(--line); box-sizing: border-box; }
 .pay-inline-paper { width: 794px; }
-.m-pay-amount.is-payslip .payslip strong { margin-top: initial; font-size: inherit; font-weight: inherit; display: inline; }
-.m-pay-amount.is-payslip .ps-net strong { display: block; margin-top: 8px; font-size: 48px; font-weight: 800; }
-.m-pay-amount.is-payslip .payslip small { font-size: inherit; font-weight: inherit; opacity: 1; }
 
 /* 펼친 명세서도 금액 카드의 색을 유지 */
 .m-pay-amount.is-payslip { background: linear-gradient(125deg,#59b5ff2b,#FFFFFF 70%,#ff05bf0a); border-color: #59b5ff3d; }
 .m-pay-amount.is-payslip .pay-preview-toolbar { position: relative; height: 40px; padding: 0; border: 0; }
 .m-pay-amount.is-payslip .pay-preview-close { width: auto; height: auto; min-height: 0; padding: 5px 10px; border: 1px solid #ff05bf55; border-radius: 9px; background: #fff0fb; color: #FF05BF; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
-.m-pay-amount.is-payslip .payslip { background: transparent; height: auto; padding-top: 20px; padding-bottom: 96px; }
-.m-pay-amount.is-payslip .ps-brand { display: none; }
-.m-pay-amount.is-payslip .ps-top { padding-bottom: 14px; }
-.m-pay-amount.is-payslip .ps-name { margin-top: 32px; }
-.m-pay-amount.is-payslip .ps-foot { padding-top: 28px; }
 .m-payslip-preview-btn { min-width: 56px; box-sizing: border-box; }
 
 /* 파란 카드 안 명세서 종이는 흰색 유지 */
-.m-pay-amount.is-payslip .payslip { background: #FFFFFF; }
 .pay-amount-morph { position: fixed; z-index: 180; pointer-events: none; overflow: visible; }
 
 /* 파란 카드 안쪽에 종이 둘레 여백 확보 */
@@ -449,3 +440,7 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
 /* 닫기 버튼과 종이 사이, 종이 아래 여백을 같은 간격으로 */
 .m-pay-amount.is-payslip { padding-bottom: 16px; }
 .m-pay-amount.is-payslip .pay-preview-toolbar { margin-bottom: 10px; }
+
+/* 종이 내부는 실제 PDF와 같은 A4 크기·공통 스타일만 사용 */
+.m-pay-amount.is-payslip { border-radius: 18px; border-style: solid; border-width: 1px; margin-bottom: 12px; }
+.pay-inline-paper, .pay-inline-paper * { letter-spacing: 0 !important; font-variant-numeric: normal !important; }

@@ -1373,6 +1373,7 @@ function previewPayslipFromAmount(id) {
   const amountText = amount?.textContent;
   const month = state.payroll.month;
   const previousHeight = source.getBoundingClientRect().height;
+  source.classList.remove("m-hero", "small");
   source.classList.add("is-payslip");
   source.setAttribute("aria-label", "급여명세서 미리보기");
   source.innerHTML = `<div class="pay-preview-toolbar"><button type="button" class="pay-preview-close m-payslip-preview-btn" aria-label="금액 보기로 돌아가기">닫기</button></div><div class="pay-inline-paper">${renderPayslip(payrollRow(emp,month,monthRecords(month,id)),month)}</div>`;
@@ -1414,6 +1415,7 @@ function previewPayslipFromAmount(id) {
     clearAmountMorph();
     const from = source.getBoundingClientRect().height;
     source.classList.remove("is-payslip");
+    source.classList.add("m-hero", "small");
     source.removeAttribute("aria-label");
     source.innerHTML = original;
     const to = source.getBoundingClientRect().height;
