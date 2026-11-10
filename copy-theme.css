@@ -315,3 +315,5 @@ html { background-color: var(--bg); }
   .m-top.m-day-top { grid-template-columns: 40px minmax(0,1fr) 40px 40px; }
   .m-top .m-tour { justify-self: center; }
 }
+/* 로딩·로그인 화면의 큰 로고 뒤 핫핑크 그림자 */
+.logo.big { box-shadow: 0 10px 30px #ff05bf4d; }
