@@ -922,13 +922,18 @@ function setupScrollCalendar() {
   document.documentElement.style.setProperty("--calendar-header-height", `${app.querySelector(".m-top").getBoundingClientRect().height}px`);
   root.querySelector('[data-month-offset="0"]').scrollIntoView({block:"start"});
   calendarHeaderScroll = () => {
-    const title = app.querySelector(".m-calendar-month-title");
+    const title = app.querySelector(".m-calendar-month-select");
     if (!title) return;
     const top = app.querySelector(".m-top").getBoundingClientRect().bottom;
     // 두 달 시작점의 중간을 넘었을 때 상단 연월도 다음 달로 바꾼다.
     const visible = Array.from(root.querySelectorAll(".scroll-calendar-month")).reduce((best, el) =>
       !best || Math.abs(el.getBoundingClientRect().top-top) < Math.abs(best.getBoundingClientRect().top-top) ? el : best, null);
-    if (visible) title.textContent = visible.querySelector(".cal-title").textContent;
+    if (visible) {
+      const period = new Date(state.year, state.month - 1 + Number(visible.dataset.monthOffset), 1);
+      title.value = `${period.getFullYear()}-${String(period.getMonth()+1).padStart(2,"0")}`;
+      const label = title.closest(".dd")?.querySelector(".dd-btn span");
+      if (label) label.textContent = visible.querySelector(".cal-title").textContent;
+    }
   };
   window.addEventListener("scroll", calendarHeaderScroll, {passive:true});
   calendarHeaderScroll();
@@ -1093,8 +1098,8 @@ function renderStaffLink() {
 
 const ICON_CHEVRON = svg(18, '<path d="m9 18 6-6-6-6"/>', 2.25);
 
-function mobilePayrollMonthSelect() {
-  const selected = state.payroll.month;
+function mobilePayrollMonthSelect(calendar = false) {
+  const selected = calendar ? `${state.year}-${String(state.month).padStart(2,"0")}` : state.payroll.month;
   const now = new Date();
   const base = now.getFullYear()*12+now.getMonth();
   const monthIndex = ym => Number(ym.slice(0,4))*12+Number(ym.slice(5,7))-1;
@@ -1105,7 +1110,7 @@ function mobilePayrollMonthSelect() {
     const y=Math.floor(i/12),m=i%12+1,value=`${y}-${String(m).padStart(2,"0")}`;
     options += `<option value="${value}"${value===selected ? " selected" : ""}>${y}년 ${m}월</option>`;
   }
-  return `<select class="field m-payroll-month-select" data-payroll="month" aria-label="급여 조회 월">${options}</select>`;
+  return `<select class="field m-payroll-month-select${calendar ? " m-calendar-month-select" : ""}" ${calendar ? 'data-calendar-month="true"' : 'data-payroll="month"'} aria-label="${calendar ? "출퇴근 조회 월" : "급여 조회 월"}">${options}</select>`;
 }
 
 function renderMobileShell(active, content) {
@@ -1121,7 +1126,7 @@ function renderMobileShell(active, content) {
   const logoutIcon = '<svg class="m-exit-symbol" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>';
   return `
     <header class="m-top${["calendar","records"].includes(route().name) ? " m-calendar-top" : ""}">
-      ${route().name === "calendar" ? `<b class="m-calendar-month-title">${state.year}년 ${state.month}월</b>` : ""}
+      ${route().name === "calendar" ? mobilePayrollMonthSelect(true) : ""}
       ${route().name === "records" ? mobilePayrollMonthSelect() : ""}
       <button type="button" class="m-tour" data-action="start-tour" aria-label="도움말" title="도움말">?</button>
       <span class="m-store" aria-hidden="true"></span>
@@ -2874,7 +2879,7 @@ const TOURS = {
         ],
   calendar: (pc) => [
     ...(pc ? [] : [{ sel: ".m-today", title: "오늘 근무자", text: "오늘 일할 사람과 출근했는지가 보여요. 누르면 오늘 화면으로 가요." }]),
-    { sel: pc ? ".cal-head" : ".m-calendar-month-title", title: "달 바꾸기", text: pc ? "화살표로 지난달, 다음 달을 봐요." : "달력을 반 이상 아래로 넘기면 다음 달에 맞춰지고, 반보다 적게 넘기면 현재 달로 돌아와요. 위로 넘기면 지난달을 볼 수 있어요. 날짜를 누르면 그날의 상세 화면이 열려요." },
+    { sel: pc ? ".cal-head" : ".m-top .dd", title: "달 바꾸기", text: pc ? "화살표로 지난달, 다음 달을 봐요." : "상단 연월을 누르면 월 선택 목록이 펼쳐져요. 달력을 반 이상 아래로 넘겨도 다음 달로 이동해요. 위로 넘기면 지난달을 볼 수 있어요. 날짜를 누르면 그날의 상세 화면이 열려요." },
     { sel: [".cell:has(.day-num.today)", ".grid .cell"], title: "날짜 칸", text: "그날 출근 기록이 이름과 시간으로 보여요. 근무표보다 <b style=\"color:var(--more)\">더 일하면 파랑</b>, <b style=\"color:var(--red)\">덜 일하면 빨강</b>이에요. 날짜를 누르면 그날이 열려요." },
     { scene: "day", sel: ".date-box", title: "그날 출근 기록", text: "날짜를 누르면 이렇게 열려요. 여기 보이는 출퇴근 시간이 급여에 들어가요. 찍은 시각을 <b>10분 단위로 반올림</b>한 시간이에요(13:52 → 13:50, 13:55 → 14:00)." },
     { scene: "day", sel: ".staff", title: "근무 예정", text: "그날 근무표에 있는 사람이에요. 이름 밑 시간은 <b>근무표 시간</b>이라 출퇴근 기록을 고쳐도 바뀌지 않아요." },
@@ -4445,6 +4450,11 @@ app.addEventListener("change", (e) => {
   if (t.dataset.allow) {
     const item = state.allowDraft[Number(t.dataset.index)];
     item[t.dataset.allow] = t.dataset.allow === "amount" ? parseMoney(t.value) : t.value.trim();
+    render();
+    return;
+  }
+  if (t.dataset.calendarMonth) {
+    [state.year, state.month] = t.value.split("-").map(Number);
     render();
     return;
   }
