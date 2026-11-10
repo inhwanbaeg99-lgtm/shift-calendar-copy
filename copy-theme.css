@@ -356,3 +356,7 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
   .m-text-nav.dragging .m-text-pill { transition: none; }
 }
 @media (prefers-reduced-motion: reduce) { .m-text-pill { transition: none; } }
+/* 연월 선택란 유무와 관계없이 헤더 아이콘의 세로 위치 유지 */
+@media (max-width: 767px) {
+  .m-top, .m-top.m-calendar-top, .m-top.m-day-top { grid-template-rows: 44px; align-items: center; }
+}
