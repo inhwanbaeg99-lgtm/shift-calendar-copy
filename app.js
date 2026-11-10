@@ -3440,7 +3440,7 @@ window.addEventListener("hashchange", () => {
       transition.finished.finally(() => { delete document.documentElement.dataset.tabShift; });
     } else {
       render();
-      app.querySelector(".m-main")?.animate([{transform:`translateX(${shift*60}px)`,opacity:0},{transform:"translateX(0)",opacity:1}],{duration:300,easing:"cubic-bezier(.22,.75,.2,1)"});
+      app.querySelector(".m-main")?.animate([{transform:`translateX(${shift*80}px)`,opacity:0},{transform:"translateX(0)",opacity:1}],{duration:420,easing:"cubic-bezier(.25,.8,.25,1)"});
     }
   } else if (smoothDay && !wasDay) {
     animateDateIntoDetails(route().date);
