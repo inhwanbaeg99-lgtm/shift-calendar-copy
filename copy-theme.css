@@ -277,3 +277,10 @@ input:focus-visible, button:focus-visible, a:focus-visible { outline-color: #FF0
   html.calendar-month-snap { scroll-snap-type: y mandatory; scroll-padding-top: var(--calendar-header-height, 64px); }
   .calendar-month-snap .scroll-calendar-month { scroll-snap-align: start; scroll-snap-stop: always; scroll-margin-top: 0; }
 }
+
+@media (max-width: 767px) {
+  .m-calendar-top .dd { min-width: 0; }
+  .m-calendar-top .dd-btn { background: transparent; padding: 0; min-height: 40px; font-size: 24px; font-weight: 700; letter-spacing: -.035em; gap: 6px; }
+  .m-calendar-top .dd > select.m-payroll-month-select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; pointer-events: none; }
+  .m-calendar-top .dd-list { max-height: min(360px,60svh); }
+}

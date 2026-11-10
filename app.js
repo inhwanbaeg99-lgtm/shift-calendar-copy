@@ -1093,6 +1093,21 @@ function renderStaffLink() {
 
 const ICON_CHEVRON = svg(18, '<path d="m9 18 6-6-6-6"/>', 2.25);
 
+function mobilePayrollMonthSelect() {
+  const selected = state.payroll.month;
+  const now = new Date();
+  const base = now.getFullYear()*12+now.getMonth();
+  const monthIndex = ym => Number(ym.slice(0,4))*12+Number(ym.slice(5,7))-1;
+  const earliest = Math.min(base-60, monthIndex(selected), ...store.records.map(r=>monthIndex(r.date)).filter(Number.isFinite));
+  const latest = Math.max(base+12, monthIndex(selected));
+  let options = "";
+  for (let i=latest;i>=earliest;i--) {
+    const y=Math.floor(i/12),m=i%12+1,value=`${y}-${String(m).padStart(2,"0")}`;
+    options += `<option value="${value}"${value===selected ? " selected" : ""}>${y}년 ${m}월</option>`;
+  }
+  return `<select class="field m-payroll-month-select" data-payroll="month" aria-label="급여 조회 월">${options}</select>`;
+}
+
 function renderMobileShell(active, content) {
   const icons = {
     employees: '<circle cx="9" cy="8" r="3"/><path d="M3.5 20v-1.5a5.5 5.5 0 0 1 11 0V20M16 5.5a3 3 0 0 1 0 5.8M20.5 20v-1.5a5.5 5.5 0 0 0-3-4.9"/>',
@@ -1105,8 +1120,9 @@ function renderMobileShell(active, content) {
   const accountIcon = '<svg class="m-account-symbol" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-4 0-8 2-8 5v2h16v-2c0-3-4-5-8-5z"/></svg>';
   const logoutIcon = '<svg class="m-exit-symbol" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>';
   return `
-    <header class="m-top${route().name === "calendar" ? " m-calendar-top" : ""}">
+    <header class="m-top${["calendar","records"].includes(route().name) ? " m-calendar-top" : ""}">
       ${route().name === "calendar" ? `<b class="m-calendar-month-title">${state.year}년 ${state.month}월</b>` : ""}
+      ${route().name === "records" ? mobilePayrollMonthSelect() : ""}
       <button type="button" class="m-tour" data-action="start-tour" aria-label="도움말" title="도움말">?</button>
       <span class="m-store" aria-hidden="true"></span>
       ${demoLoaded ? `<a class="m-login" href="#/login" aria-label="로그인" title="로그인">${accountIcon}</a>` : `<a class="m-login" href="#/mypage" aria-label="마이페이지" title="마이페이지">${accountIcon}</a>`}
@@ -1351,11 +1367,6 @@ function renderRecordsMobile() {
     "records",
     `
     ${payCheckNotice(month)}
-    <div class="m-month">
-      <button type="button" class="round-btn" data-action="payroll-prev" aria-label="이전 달">${ICON_PREV}</button>
-      <h1>${y}년 ${m}월</h1>
-      <button type="button" class="round-btn" data-action="payroll-next" aria-label="다음 달">${ICON_NEXT}</button>
-    </div>
     <div class="m-hero">
       <small>이번 달 실지급액 합계</small>
       <strong class="net">${won(total.net)}</strong>
@@ -2905,7 +2916,7 @@ const TOURS = {
           { sel: ".section-head [data-action=payslip-pdf-all]", title: "명세서 PDF", text: "직원마다 따로 급여명세서 PDF를 받아요. 직원에게 보내 주면 돼요." },
         ]
       : [
-          { sel: ".m-month", title: "달 바꾸기", text: "화살표로 지난달 급여를 볼 수 있어요." },
+          { sel: ".m-top .dd", title: "달 바꾸기", text: "상단 연월을 누르면 월 선택 목록이 펼쳐져요. 확인할 달을 골라 주세요." },
           { sel: ".pay-check", title: "퇴근 확인 필요", text: "출근을 찍고 근무표 종료 시간이 지나도록 퇴근을 안 찍은 기록이에요. 눌러서 그날 화면으로 간 뒤, 출근 기록에서 이름을 눌러 <b>수정</b>으로 시간을 넣으면 사라져요." },
           { sel: ".m-hero", title: "이번 달 합계", text: "실지급액 합계예요. 오른쪽에서 알바 세금(3.3% / 공제 안 함)을 바꿔요." },
           { sel: ".m-pay", title: "직원 누르기", text: "직원을 누르면 그 사람 급여 내역이 열려요." },
@@ -3243,7 +3254,7 @@ function render() {
 // 고르면 select 값을 바꾸고 change 를 내보내므로 저장 처리는 원래 코드 그대로다. 휴대폰은 기본 선택창을 쓴다.
 const DD_CHEVRON = svg(14, '<path d="m6 9 6 6 6-6"/>', 2.5);
 function enhanceSelects() {
-  const selector = isDesktop() ? "select.field" : ".m-screen-records select.m-tax";
+  const selector = isDesktop() ? "select.field" : ".m-screen-records select.m-tax, .m-payroll-month-select";
   for (const sel of app.querySelectorAll(selector)) {
     const dd = document.createElement("div");
     dd.className = "dd";
