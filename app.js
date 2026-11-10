@@ -1805,7 +1805,6 @@ function renderPayslip(r, ym) {
   const deductTotal = r.dedTotal;
   const pending = r.salaried && !r.ded;
   const line = ([label, value]) => `<li><span>${esc(label)}</span><b>${won(value)}</b></li>`;
-  const issued = todayDateString().replaceAll("-", ".");
   const lastDay = new Date(y, m, 0).getDate();
   // 임금명세서 필수 기재: 금액이 근무시간에 따라 달라지면 계산 방법을 적는다 (근로기준법 시행령 제27조의2)
   const wage = r.emp.hourlyWage;
@@ -1860,7 +1859,6 @@ function renderPayslip(r, ym) {
       <footer class="ps-foot">
         <p class="ps-thanks">이번 한 달도 수고 많으셨어요. 감사합니다.</p>
         <p class="ps-store">${esc(storeName())}</p>
-        <p class="ps-issued">발행일 ${issued}</p>
       </footer>
     </div>`;
 }

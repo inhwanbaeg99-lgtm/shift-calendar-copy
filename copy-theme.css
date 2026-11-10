@@ -444,3 +444,11 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
 /* 종이 내부는 실제 PDF와 같은 A4 크기·공통 스타일만 사용 */
 .m-pay-amount.is-payslip { border-radius: 18px; border-style: solid; border-width: 1px; margin-bottom: 12px; }
 .pay-inline-paper, .pay-inline-paper * { letter-spacing: 0 !important; font-variant-numeric: normal !important; }
+
+/* 실제 명세서와 미리보기 공통: 상단을 압축하고 하단 종이 여백 확보 */
+.payslip { padding: 40px 80px 96px; }
+.payslip .ps-name { margin-top: 28px; }
+.payslip .ps-net { margin-top: 28px; margin-bottom: 28px; }
+.payslip .ps-sec { margin-bottom: 24px; }
+.payslip .ps-foot { flex-shrink: 0; padding-top: 20px; }
+.payslip .ps-foot .ps-store { margin-bottom: 0; }
