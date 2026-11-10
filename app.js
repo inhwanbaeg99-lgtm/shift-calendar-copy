@@ -3157,8 +3157,15 @@ function fitMobileAttendanceCalendar() {
     const menuHeight = parseFloat(menuStyle.height) || menu.offsetHeight;
     const menuBottom = parseFloat(menuStyle.bottom) || 0;
     const main = grid.closest(".m-main");
-    if (main) main.style.paddingBottom = `${menuHeight + menuBottom + 8}px`;
-    // 날짜 높이는 고정된 앱 영역 안에서 CSS flex로 균등 분배한다.
+    const header = app.querySelector(".m-top");
+    if (main && header) {
+      const install = app.querySelector(".m-install");
+      const top = install ? install.getBoundingClientRect().bottom : header.getBoundingClientRect().bottom;
+      main.style.top = `${Math.ceil(top)}px`;
+      main.style.bottom = `${Math.ceil(menuHeight + menuBottom + 12)}px`;
+      main.style.paddingBottom = "0px";
+    }
+    // 본문 자체를 메뉴 위에서 끝내고, 그 안에서 날짜 줄을 균등 배분한다.
     grid.style.removeProperty("height");
   });
 }

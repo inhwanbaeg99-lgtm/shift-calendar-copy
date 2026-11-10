@@ -334,3 +334,14 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
   .attendance-viewport .month-picker-calendar .cell,
   .attendance-viewport .month-picker-calendar .empty-cell { min-height: 0; }
 }
+
+@media (max-width: 767px) {
+  .attendance-viewport .m-screen-calendar {
+    position: fixed; left: 0; right: 0; top: 80px;
+    bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+    height: auto; padding-bottom: 0; margin: 0; overflow: hidden;
+  }
+  .attendance-viewport .month-picker-calendar,
+  .attendance-viewport .month-picker-calendar .card,
+  .attendance-viewport .month-picker-calendar .cal-wrap { box-sizing: border-box; max-height: 100%; }
+}
