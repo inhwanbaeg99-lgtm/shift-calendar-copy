@@ -3143,6 +3143,18 @@ const homeHash = () => (ADMIN_SITE ? "#/calendar" : "#/");
 // 다시 그릴 때 입력 중이던 시간 칸 값을 지키는 칸들 (편집이 끝나면 칸이 사라지므로 그대로 남지 않는다)
 const KEEP_FIELDS = ["edit-start", "edit-end", "extra-name", "extra-start", "extra-end"];
 
+function fitMobileAttendanceCalendar() {
+  if (isDesktop()) return;
+  const grid = app.querySelector(".month-picker-calendar .grid");
+  const menu = app.querySelector(".m-bubble-nav");
+  if (!grid || !menu) return;
+  const top = grid.getBoundingClientRect().top;
+  const bottom = menu.getBoundingClientRect().top;
+  grid.style.height = `${Math.max(200, bottom - top - 8)}px`;
+}
+window.addEventListener("resize", fitMobileAttendanceCalendar);
+window.visualViewport?.addEventListener("resize", fitMobileAttendanceCalendar);
+
 function render() {
   const kept = KEEP_FIELDS.map((id) => [id, document.getElementById(id)?.value]).filter(([, v]) => v);
   const focusedId = document.activeElement?.id;
@@ -3169,6 +3181,7 @@ function render() {
   if (period) fitPeriod(period);
   lockDemoFields();
   enhanceSelects();
+  fitMobileAttendanceCalendar();
   placeNavPill();
   if (state.pageEnter && r.name === "records") countUp(app.querySelectorAll(".pay-table td.net, .m-main .net"));
   // 카톡 복사 후 다음 직원으로 넘어갔음을 보여준다: 직원 칸 반짝, 표 새로 들어옴, 전송 버튼 두근

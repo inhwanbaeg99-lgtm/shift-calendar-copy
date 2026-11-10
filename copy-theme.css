@@ -295,14 +295,3 @@ input:focus-visible, button:focus-visible, a:focus-visible { outline-color: #FF0
 @media (max-width: 767px) {
   .m-screen-calendar .month-picker-calendar .cal-head { display: none; }
 }
-/* 모바일 출퇴근 달력 날짜 구분선 */
-@media (max-width: 767px) {
-  .m-screen-calendar .month-picker-calendar .grid { gap: 0; }
-  .m-screen-calendar .month-picker-calendar .grid > .cell,
-  .m-screen-calendar .month-picker-calendar .grid > .empty-cell {
-    border: 0; border-radius: 0;
-    border-top: 1px solid var(--grid);
-    border-right: 1px solid var(--grid);
-  }
-  .m-screen-calendar .month-picker-calendar .grid > :nth-child(7n) { border-right: 0; }
-}
