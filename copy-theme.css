@@ -446,7 +446,7 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
 .pay-inline-paper, .pay-inline-paper * { letter-spacing: 0 !important; font-variant-numeric: normal !important; }
 
 /* 실제 명세서와 미리보기 공통: 상단을 압축하고 하단 종이 여백 확보 */
-.payslip { padding: 40px 80px 96px; }
+.payslip { padding: 40px 80px; }
 .payslip .ps-name { margin-top: 28px; }
 .payslip .ps-net { margin-top: 28px; margin-bottom: 28px; }
 .payslip .ps-sec { margin-bottom: 24px; }
