@@ -441,3 +441,8 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
 /* 파란 카드 안 명세서 종이는 흰색 유지 */
 .m-pay-amount.is-payslip .payslip { background: #FFFFFF; }
 .pay-amount-morph { position: fixed; z-index: 180; pointer-events: none; overflow: visible; }
+
+/* 파란 카드 안쪽에 종이 둘레 여백 확보 */
+.m-pay-amount.is-payslip { padding: 0 12px 16px; }
+.m-pay-amount.is-payslip .pay-preview-toolbar { margin-inline: -12px; }
+.m-pay-amount.is-payslip .pay-inline-paper { box-shadow: 0 3px 14px #18334b12; }

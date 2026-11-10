@@ -1377,7 +1377,9 @@ function previewPayslipFromAmount(id) {
   source.setAttribute("aria-label", "급여명세서 미리보기");
   source.innerHTML = `<div class="pay-preview-toolbar"><button type="button" class="pay-preview-close m-payslip-preview-btn" aria-label="금액 보기로 돌아가기">닫기</button></div><div class="pay-inline-paper">${renderPayslip(payrollRow(emp,month,monthRecords(month,id)),month)}</div>`;
   const paper = source.querySelector(".pay-inline-paper");
-  paper.style.zoom = Math.min(1,source.clientWidth/794);
+  const cardStyle = getComputedStyle(source);
+  const paperWidth = source.clientWidth - parseFloat(cardStyle.paddingLeft) - parseFloat(cardStyle.paddingRight);
+  paper.style.zoom = Math.min(1,paperWidth/794);
   const expandedHeight = source.getBoundingClientRect().height;
   let clearAmountMorph = () => {};
   if (!reducedMotion()) {
