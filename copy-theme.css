@@ -307,3 +307,11 @@ html { background-color: var(--bg); }
   .m-day-top .m-store { min-width: 0; }
   .m-screen-calendar .day-page .back-btn { display: none; }
 }
+
+/* 도움말은 모든 모바일 화면에서 계정 아이콘 바로 왼쪽 */
+@media (max-width: 767px) {
+  .m-top { grid-template-columns: minmax(0,1fr) 40px 40px; column-gap: 6px; }
+  .m-top.m-calendar-top { grid-template-columns: max-content minmax(0,1fr) 40px 40px; }
+  .m-top.m-day-top { grid-template-columns: 40px minmax(0,1fr) 40px 40px; }
+  .m-top .m-tour { justify-self: center; }
+}

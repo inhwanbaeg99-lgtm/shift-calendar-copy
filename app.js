@@ -1082,8 +1082,8 @@ function renderMobileShell(active, content) {
       ${route().name === "calendar" ? mobilePayrollMonthSelect(true) : ""}
       ${route().name === "records" ? mobilePayrollMonthSelect() : ""}
       ${route().name === "day" ? `<button type="button" class="m-day-back" data-action="go-home" aria-label="달력으로 돌아가기">${ICON_PREV}</button>` : ""}
-      <button type="button" class="m-tour" data-action="start-tour" aria-label="도움말" title="도움말">?</button>
       <span class="m-store" aria-hidden="true"></span>
+      <button type="button" class="m-tour" data-action="start-tour" aria-label="도움말" title="도움말">?</button>
       ${demoLoaded ? `<a class="m-login" href="#/login" aria-label="로그인" title="로그인">${accountIcon}</a>` : `<a class="m-login" href="#/mypage" aria-label="마이페이지" title="마이페이지">${accountIcon}</a>`}
     </header>
     ${demoLoaded ? "" : `<div class="m-staff-shortcut">${staffCalLink("m-staff-link")}</div>`}
