@@ -1368,12 +1368,12 @@ function previewPayslipFromAmount(id) {
   const previousHeight = source.getBoundingClientRect().height;
   source.classList.add("is-payslip");
   source.setAttribute("aria-label", "급여명세서 미리보기");
-  source.innerHTML = `<div class="pay-preview-toolbar"><b>급여명세서</b><button type="button" class="pay-preview-close" aria-label="금액 보기로 돌아가기">${ICON_CLOSE}</button></div><div class="pay-inline-paper">${renderPayslip(payrollRow(emp,month,monthRecords(month,id)),month)}</div>`;
+  source.innerHTML = `<div class="pay-preview-toolbar"><button type="button" class="pay-preview-close m-payslip-preview-btn" aria-label="금액 보기로 돌아가기">닫기</button></div><div class="pay-inline-paper">${renderPayslip(payrollRow(emp,month,monthRecords(month,id)),month)}</div>`;
   const paper = source.querySelector(".pay-inline-paper");
   paper.style.zoom = Math.min(1,source.clientWidth/794);
   const expandedHeight = source.getBoundingClientRect().height;
   if (!reducedMotion()) {
-    source.animate([{height:`${previousHeight}px`,background:"#edf7ff"},{height:`${expandedHeight}px`,background:"#FFFFFF"}],{duration:460,easing:"cubic-bezier(.22,.75,.2,1)"});
+    source.animate([{height:`${previousHeight}px`},{height:`${expandedHeight}px`}],{duration:460,easing:"cubic-bezier(.22,.75,.2,1)"});
     paper.animate([{opacity:0},{opacity:1}],{duration:260,delay:220,fill:"both"});
   }
   source.querySelector(".pay-preview-close").addEventListener("click", () => {
