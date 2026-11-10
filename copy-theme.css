@@ -394,3 +394,7 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
   .m-pay-person .dd-list { max-height: min(220px,40svh); left: 50%; transform: translateX(-50%); text-align: left; }
   .m-day-top a.m-day-back { text-decoration: none; }
 }
+@media (max-width: 767px) {
+  .m-tabbar.m-text-nav { padding: 0; }
+  .m-text-pill { border-radius: 32px; }
+}
