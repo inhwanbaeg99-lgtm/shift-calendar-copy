@@ -1067,14 +1067,9 @@ function mobilePayrollMonthSelect(calendar = false) {
 }
 
 function renderMobileShell(active, content) {
-  const icons = {
-    employees: '<circle cx="9" cy="8" r="3"/><path d="M3.5 20v-1.5a5.5 5.5 0 0 1 11 0V20M16 5.5a3 3 0 0 1 0 5.8M20.5 20v-1.5a5.5 5.5 0 0 0-3-4.9"/>',
-    schedule: '<rect x="4" y="4" width="16" height="17" rx="3"/><path d="M8 2v4M16 2v4M4 10h16M8 14h3M8 17h7"/>',
-    calendar: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2M8 2.5 5 4M16 2.5 19 4"/>',
-    records: '<path d="M20 7H6a2.5 2.5 0 0 1 0-5h11v5M4 4.5V19a2 2 0 0 0 2 2h14V7"/><path d="M20 11h-5a3 3 0 0 0 0 6h5"/><circle cx="15" cy="14" r=".7"/>'
-  };
   const tab = (key, label, i) =>
-    `<a href="#/${key}" style="--tab-index:${i}" class="m-tab${active === key ? " active" : ""}"${active === key ? ' aria-current="page"' : ""} aria-label="${label}"><svg viewBox="0 0 24 24" aria-hidden="true">${icons[key]}</svg><span>${label}</span></a>`;
+    `<a href="#/${key}" class="m-tab${active === key ? " active" : ""}"${active === key ? ' aria-current="page"' : ""} aria-label="${label}"><span>${label}</span></a>`;
+  const navIndex = Math.max(0, ["calendar","schedule","employees","records"].indexOf(active));
   const accountIcon = '<svg class="m-account-symbol" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-4 0-8 2-8 5v2h16v-2c0-3-4-5-8-5z"/></svg>';
   const logoutIcon = '<svg class="m-exit-symbol" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>';
   return `
@@ -1090,9 +1085,9 @@ function renderMobileShell(active, content) {
     ${demoLoaded ? `<p class="demo-bar">샘플 매장을 둘러보는 중이에요. <a href="#/signup">매장 등록</a> · <a href="#/login">로그인</a></p>` : ""}
     ${renderInstallHint()}
     <main class="m-main m-screen-${active}${state.pageEnter ? " page-enter" : ""}">${content}</main>
-    <nav class="m-tabbar m-bubble-nav${state.mobileMenuOpen ? " is-open" : ""}" aria-label="관리자 메뉴">
-      <button type="button" class="m-menu-toggle" data-action="toggle-mobile-menu" aria-expanded="${!!state.mobileMenuOpen}" aria-controls="mBubbleLinks" aria-label="${state.mobileMenuOpen ? "메뉴 닫기" : "메뉴 펼치기"}"><span class="m-menu-lines" aria-hidden="true"><i></i><i></i></span></button>
-      <div class="m-bubble-links" id="mBubbleLinks"${state.mobileMenuOpen ? "" : " inert"}>
+    <nav class="m-tabbar m-text-nav" style="--nav-position:${navIndex}" aria-label="관리자 메뉴">
+      <div class="m-text-links">
+        <span class="m-text-pill" aria-hidden="true"></span>
         ${tab("calendar", "출퇴근", 0)}${tab("schedule", "근무표", 1)}${tab("employees", "직원", 2)}${tab("records", "급여", 3)}
       </div>
     </nav>
@@ -3151,7 +3146,7 @@ function fitMobileAttendanceCalendar() {
   calendarFitFrame = requestAnimationFrame(() => {
     if (isDesktop()) return;
     const grid = app.querySelector(".month-picker-calendar .grid");
-    const menu = app.querySelector(".m-bubble-nav");
+    const menu = app.querySelector(".m-text-nav");
     if (!grid || !menu) return;
     const menuStyle = getComputedStyle(menu);
     const menuHeight = parseFloat(menuStyle.height) || menu.offsetHeight;
@@ -3173,7 +3168,7 @@ function observeMobileCalendarLayout() {
   calendarFitObserver?.disconnect();
   if (!app.querySelector(".month-picker-calendar") || !window.ResizeObserver) return;
   calendarFitObserver = new ResizeObserver(fitMobileAttendanceCalendar);
-  app.querySelectorAll(".m-top, .m-bubble-nav, .m-install").forEach(el => calendarFitObserver.observe(el));
+  app.querySelectorAll(".m-top, .m-text-nav, .m-install").forEach(el => calendarFitObserver.observe(el));
 }
 window.addEventListener("resize", fitMobileAttendanceCalendar);
 window.addEventListener("orientationchange", fitMobileAttendanceCalendar);
@@ -3645,6 +3640,51 @@ function closePanel() {
     render();
   }, PANEL_ANIM_MS);
 }
+
+// 텍스트 메뉴의 선택 배경을 손가락으로 좌우 이동
+let textNavDrag = null;
+let textNavSuppressUntil = 0;
+app.addEventListener("pointerdown", e => {
+  const nav = e.target.closest(".m-text-nav");
+  if (!nav || e.button !== 0) return;
+  textNavDrag = {nav, id:e.pointerId, x:e.clientX, index:Number(nav.style.getPropertyValue("--nav-position"))};
+});
+app.addEventListener("pointermove", e => {
+  const drag = textNavDrag;
+  if (!drag || drag.id !== e.pointerId) return;
+  const dx = e.clientX-drag.x;
+  if (Math.abs(dx)<6) return;
+  drag.nav.classList.add("dragging");
+  drag.nav.setPointerCapture(e.pointerId);
+  const width = drag.nav.querySelector(".m-text-links").clientWidth/4;
+  drag.position = Math.max(0,Math.min(3,drag.index+dx/width));
+  drag.nav.style.setProperty("--nav-position",drag.position);
+});
+function finishTextNavDrag(e) {
+  const drag=textNavDrag;
+  if (!drag || drag.id!==e.pointerId) return;
+  textNavDrag=null;
+  drag.nav.classList.remove("dragging");
+  if (drag.position===undefined || e.type==="pointercancel") {
+    drag.nav.style.setProperty("--nav-position",drag.index); return;
+  }
+  textNavSuppressUntil=Date.now()+400;
+  const index=Math.round(drag.position);
+  drag.nav.style.setProperty("--nav-position",index);
+  navigate(["#/calendar","#/schedule","#/employees","#/records"][index]);
+}
+app.addEventListener("pointerup",finishTextNavDrag);
+app.addEventListener("pointercancel",finishTextNavDrag);
+app.addEventListener("click",e=>{
+  const link=e.target.closest(".m-text-nav .m-tab");
+  if (!link) return;
+  e.preventDefault();
+  if(Date.now()<textNavSuppressUntil) return;
+  const nav=link.closest(".m-text-nav");
+  nav.style.setProperty("--nav-position",Array.from(nav.querySelectorAll(".m-tab")).indexOf(link));
+  const href=link.getAttribute("href");
+  setTimeout(()=>navigate(href),180);
+},true);
 
 // 모바일 메뉴는 데이터 재렌더 없이 열고 닫아 입력 중인 내용을 유지한다.
 function setMobileMenu(open) {

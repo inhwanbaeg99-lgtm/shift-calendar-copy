@@ -345,3 +345,14 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
   .attendance-viewport .month-picker-calendar .card,
   .attendance-viewport .month-picker-calendar .cal-wrap { box-sizing: border-box; max-height: 100%; }
 }
+
+/* 텍스트만 남긴 슬라이딩 하단 메뉴 */
+@media (max-width: 767px) {
+  .m-tabbar.m-text-nav { position: fixed; inset: auto 16px calc(8px + env(safe-area-inset-bottom, 0px)); height: 58px; padding: 5px; display: block; box-sizing: border-box; border: 1px solid #ffffffb3; border-radius: 32px; background: #ffffffa6; backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); box-shadow: 0 4px 24px #18334b12; z-index: 40; touch-action: pan-y; user-select: none; }
+  .m-text-links { position: relative; display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); height: 100%; }
+  .m-text-nav .m-tab { position: relative; z-index: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 26px; background: transparent; color: var(--ink-sub); font-size: 14px; font-weight: 550; text-decoration: none; }
+  .m-text-nav .m-tab.active { background: transparent; color: var(--ink); font-weight: 700; box-shadow: none; }
+  .m-text-pill { position: absolute; inset: 0 auto 0 0; width: 25%; border-radius: 26px; background: #59b5ff28; box-shadow: 0 2px 12px #59b5ff15; transform: translateX(calc(var(--nav-position)*100%)); transition: transform .28s cubic-bezier(.22,.75,.2,1); pointer-events: none; }
+  .m-text-nav.dragging .m-text-pill { transition: none; }
+}
+@media (prefers-reduced-motion: reduce) { .m-text-pill { transition: none; } }
