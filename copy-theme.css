@@ -287,3 +287,7 @@ input:focus-visible, button:focus-visible, a:focus-visible { outline-color: #FF0
 @media (max-width: 767px) {
   .m-calendar-top .dd-btn svg { width: 20px; height: 20px; stroke-width: 2.5; }
 }
+@media (max-width: 767px) {
+  .m-calendar-top .dd-btn { padding: 6px 10px; min-height: 44px; border-radius: 12px; }
+  .m-top.m-calendar-top { column-gap: 6px; }
+}
