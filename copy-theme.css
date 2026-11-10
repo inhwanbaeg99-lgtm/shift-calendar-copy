@@ -438,7 +438,7 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
 .m-pay-amount.is-payslip .pay-preview-toolbar { margin-inline: -12px; }
 .m-pay-amount.is-payslip .pay-inline-paper { box-shadow: 0 3px 14px #18334b12; }
 /* 닫기 버튼과 종이 사이, 종이 아래 여백을 같은 간격으로 */
-.m-pay-amount.is-payslip { padding-bottom: 16px; }
+.m-pay-amount.is-payslip { padding-bottom: 12px; }
 .m-pay-amount.is-payslip .pay-preview-toolbar { margin-bottom: 10px; }
 
 /* 종이 내부는 실제 PDF와 같은 A4 크기·공통 스타일만 사용 */
