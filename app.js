@@ -4019,7 +4019,7 @@ function render() {
   const kept = KEEP_FIELDS.map((id) => [id, document.getElementById(id)?.value]).filter(([, v]) => v);
   const focusedId = document.activeElement?.id;
   const r = route();
-  document.documentElement.classList.toggle("attendance-viewport", !isDesktop() && r.name === "calendar" && (!ADMIN_SITE || Boolean(state.yearView)));
+  document.documentElement.classList.toggle("attendance-viewport", !isDesktop() && r.name === "calendar" && !ADMIN_SITE);
   if (r.name === "lock") app.innerHTML = renderLock();
   else if (r.name === "pick") app.innerHTML = renderPick();
   else if (r.name === "day") app.innerHTML = renderDayPage(r.date);
