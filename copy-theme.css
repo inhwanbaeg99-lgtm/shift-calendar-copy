@@ -959,3 +959,5 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
 .m-hero-dl, .pay-inline-download { width: 45px; height: 45px; box-shadow: 0 2px 8px #ff05bf12; }
 /* 로딩 화면 콕 로고: 하늘색 박스와 같은 그림자 */
 .logo.big { box-shadow: 0 10px 30px #59b5ff1f; }
+/* 펼친 명세서: 닫기 버튼 아래 ↔ 명세서 용지 위 간격 10px */
+.m-pay-amount.is-payslip .pay-preview-toolbar { height: 48px; }
