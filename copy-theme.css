@@ -486,3 +486,10 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
 .m-work-days-heading > span { font-size: 14px; font-weight: 600; }
 .m-work-days-heading small { font-size: 13px; font-weight: 500; color: var(--ink-sub); }
 .m-work-days[open] .m-days-list { margin: 0 0 16px; padding-top: 8px; border-top: 1px solid var(--line); }
+
+.m-work-days-heading { gap: 4px; }
+.m-work-days-heading > span { font-size: 14px; font-weight: 600; color: var(--ink-2); opacity: .85; }
+.m-work-days-heading > strong { display: block; font-size: 32px; font-weight: 800; letter-spacing: -.03em; color: var(--ink); }
+.m-work-days summary::after { transform: rotate(45deg); transition: transform .3s cubic-bezier(.22,.75,.2,1); }
+.m-work-days[open] summary::after { transform: rotate(225deg); }
+@media (prefers-reduced-motion: reduce) { .m-work-days summary::after { transition: none; } }
