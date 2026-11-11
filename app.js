@@ -1230,7 +1230,7 @@ function renderMobileShell(active, content) {
       ${route().name === "records" ? mobilePayrollMonthSelect() : ""}
       ${route().name === "day" ? `<button type="button" class="m-day-back m-back-label" data-action="go-home" aria-label="달력으로 돌아가기">${ICON_PREV}<span>${Number(route().date.slice(5, 7))}월</span></button>` : ""}
       ${route().name === "pay-detail" ? `<a class="m-day-back" href="#/records" aria-label="급여 목록으로 돌아가기">${ICON_PREV}</a>` : ""}
-      ${route().name === "pay-detail" ? `<div class="m-pay-header-person">${mobilePayEmployeeSelect(route().id)}</div>` : `<span class="m-store" aria-hidden="true"></span><button type="button" class="m-tour" data-action="start-tour" aria-label="도움말" title="도움말">?</button>`}
+      ${route().name === "pay-detail" ? `<div class="m-pay-header-person">${mobilePayEmployeeSelect(route().id)}</div>` : `${{ employees: "직원", schedule: "근무표" }[route().name] ? `<h1 class="m-page-title">${{ employees: "직원", schedule: "근무표" }[route().name]}</h1>` : `<span class="m-store" aria-hidden="true"></span>`}<button type="button" class="m-tour" data-action="start-tour" aria-label="도움말" title="도움말">?</button>`}
       ${route().name === "pay-detail" ? `<button type="button" class="m-pay-download" data-action="payslip-pdf-one" data-id="${esc(route().id)}" aria-label="명세서 PDF 다운로드" title="명세서 PDF 다운로드"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 16v4h16v-4"/></svg></button>` : demoLoaded ? `<a class="m-login" href="#/login" aria-label="로그인" title="로그인">${accountIcon}</a>` : `<a class="m-login" href="#/mypage" aria-label="마이페이지" title="마이페이지">${accountIcon}</a>`}
     </header>
     ${demoLoaded ? "" : `<div class="m-staff-shortcut">${staffCalLink("m-staff-link")}</div>`}
@@ -1270,11 +1270,6 @@ function renderSheet() {
     </div>`;
 }
 
-const mHead = (title, side = "") => {
-  const hints = { employees: "직원을 누르면 정보와 근무 요일을 수정할 수 있어요.", schedule: "요일을 골라 편집한 뒤 임시저장 → 근무표 반영을 눌러요.", calendar: "날짜를 눌러 근무자와 출퇴근 기록을 확인하세요." };
-  return `<div class="m-head"><h1>${title}</h1>${side}</div>${hints[route().name] ? `<p class="m-page-intro">${hints[route().name]}</p>` : ""}`;
-};
-
 // ---------- 직원 ----------
 function weeklySummary(e) {
   const days = [1, 2, 3, 4, 5, 6, 0].filter((wd) => e.weekly[wd]);
@@ -1304,12 +1299,22 @@ function renderEmployeesMobile() {
       </button>`,
     )
     .join("");
+  const active = store.employees.filter((e) => e.active);
+  const managers = active.filter(isManager).length;
+  const inactive = store.employees.length - active.length;
   return renderAdminShell(
     "employees",
     `
-    <div class="m-head m-employee-actions"><h1>직원 · <span class="m-count">${store.employees.length}명</span></h1><button type="button" class="m-add" data-action="open-sheet" data-sheet="add-emp">+ 직원 추가</button></div>
+    <div class="m-hero m-emp-hero">
+      <small>함께 일하는 직원</small>
+      <strong>${active.length}명</strong>
+      <div class="m-hero-meta">
+        <span>알바 ${active.length - managers} · 직원 ${managers}${inactive ? ` · 비활성 ${inactive}` : ""}</span>
+        <button type="button" class="m-add" data-action="open-sheet" data-sheet="add-emp">+ 직원 추가</button>
+      </div>
+    </div>
     ${demoLoaded ? "" : renderStaffLink()}
-    <div class="m-list">${list || `<p class="m-empty">아직 직원이 없어요.<br />오른쪽 위 <b>+ 직원 추가</b>로 등록해주세요.</p>`}</div>`,
+    <div class="m-list">${list || `<p class="m-empty">아직 직원이 없어요.<br /><b>+ 직원 추가</b>로 등록해주세요.</p>`}</div>`,
   );
 }
 
@@ -1402,30 +1407,43 @@ function renderDayShifts() {
     .map(({ e, shift }, i) => {
       const hours = hoursBetween(kstIso("2026-01-05", shift.start), endIso("2026-01-05", shift.start, shift.end));
       return `
-        <button type="button" class="m-shift" style="--i:${i};--emp:${copyDisplayColor(e.color)}" data-action="edit-slot" data-wd="${wd}" data-id="${e.id}" data-start="${toMin(shift.start)}">
-          <span class="m-shift-bar"></span>
+        <button type="button" class="m-shift m-row" style="--i:${i};--emp:${copyDisplayColor(e.color)}" data-action="edit-slot" data-wd="${wd}" data-id="${e.id}" data-start="${toMin(shift.start)}">
+          <span class="swatch big" style="background:${copyDisplayColor(e.color)}"></span>
           <span class="m-shift-body"><b>${esc(e.name)}${isManager(e) ? `<em class="m-chip">직원</em>` : ""}</b><small>${shift.start} ~ ${shift.end}</small></span>
           <span class="m-shift-hours">${hour1(hours)}시간</span>
+          <span class="m-chev">${ICON_CHEVRON}</span>
         </button>`;
     })
     .join("");
   return `
     ${rows || `<p class="m-empty">${WEEKDAYS[wd]}요일 근무자가 없어요.</p>`}
-    <button type="button" class="m-add-shift" data-action="edit-slot" data-wd="${wd}" data-start="540">+ ${WEEKDAYS[wd]}요일 근무자 추가</button>`;
+    <button type="button" class="m-add-shift m-row" data-action="edit-slot" data-wd="${wd}" data-start="540">+ ${WEEKDAYS[wd]}요일 근무자 추가</button>`;
 }
 
 function renderScheduleMobile() {
   const wd = state.schedDay ?? weekdayOf(todayDateString());
   const meta = schedMeta();
   const count = (d) => store.employees.filter((e) => e.active && effWeekly(e)[d]).length;
+  // 한 주 전체 근무 수 · 시간
+  let shifts = 0, weekHours = 0;
+  store.employees.filter((e) => e.active).forEach((e) => Object.values(effWeekly(e)).forEach((sh) => {
+    if (!sh) return;
+    shifts += 1;
+    weekHours += hoursBetween(kstIso("2026-01-05", sh.start), endIso("2026-01-05", sh.start, sh.end));
+  }));
   return renderAdminShell(
     "schedule",
     `
-    ${mHead("근무표", `<div class="m-help">${schedHelp()}</div>`)}
-    <label class="m-period">
-      <span>적용 시작일</span>
-      <input class="sc-period" value="${esc(normalizePeriod(meta.period ?? ""))}" data-meta="period" inputmode="numeric" placeholder="예: 2026.11.09" aria-label="근무표 적용 시작일" />
-    </label>
+    <div class="m-hero m-sched-hero">
+      <label class="m-period">
+        <small>적용 시작일</small>
+        <input class="sc-period" value="${esc(normalizePeriod(meta.period ?? ""))}" data-meta="period" inputmode="numeric" placeholder="예: 2026.11.09" aria-label="근무표 적용 시작일" />
+      </label>
+      <div class="m-hero-meta">
+        <span>한 주 ${shifts}근무 · ${hour1(weekHours)}시간</span>
+        <button type="button" class="m-add m-share-btn" data-action="schedule-share">공유하기</button>
+      </div>
+    </div>
     <div class="m-days" role="tablist">
       ${[1, 2, 3, 4, 5, 6, 0]
         .map(
@@ -1437,17 +1455,15 @@ function renderScheduleMobile() {
         .join("")}
     </div>
     <h2 class="m-day-heading">${WEEKDAYS[wd]}요일 근무자 <span>${count(wd)}명</span></h2>
-    <div class="m-shifts${state.dayListEnter ? " enter" : ""}" id="sched-day-list">${renderDayShifts()}</div>
+    <div class="m-shifts m-list${state.dayListEnter ? " enter" : ""}" id="sched-day-list">${renderDayShifts()}</div>
     <details class="m-fold">
       <summary>근무표 한눈에 보기</summary>
       <div class="sched-scroll" id="sched-scroll">${renderScheduleSheet()}</div>
     </details>
     <div id="sched-status">${renderSchedStatus()}</div>
-    <div class="m-savebar">
-      <p class="m-save-explain">① 변경 내용을 임시저장 → ② 시작일부터 근무표에 반영</p>
-      <button type="button" class="btn-ghost" data-action="schedule-temp"${schedDirty() ? "" : " disabled"}>① 임시저장</button>
-      <button type="button" class="btn-primary" data-action="schedule-save"${hasDraft() ? "" : " disabled"}>② 근무표 반영</button>
-      <button type="button" class="btn-ghost" data-action="schedule-share">공유하기</button>
+    <div class="m-btns m-pay-exports m-savebar">
+      <button type="button" class="btn-ghost" data-action="schedule-temp"${schedDirty() ? "" : " disabled"}>임시저장</button>
+      <button type="button" class="btn-primary" data-action="schedule-save"${hasDraft() ? "" : " disabled"}>근무표 반영</button>
     </div>`,
   );
 }
@@ -3068,7 +3084,7 @@ const TOURS = {
           { sel: ".m-add-shift", title: "근무자 추가", text: "이 요일에 근무자를 추가해요." },
           { scene: "slotAdd", sel: ".sheet", title: "근무자 추가 창", text: "직원을 고르고 시간을 넣은 뒤 <b>완료</b>를 눌러요." },
           { sel: ".m-fold > summary", title: "근무표 한눈에 보기", text: "일주일 근무표 전체를 볼 수 있어요." },
-          { sel: ".m-savebar", title: "저장 · 카톡 전송", text: "<b>저장</b>하면 시작 날짜부터 반영돼요. <b>카톡 전송</b>은 근무표를 사진으로 보내요." },
+          { sel: ".m-savebar", title: "임시저장 · 근무표 반영", text: "<b>임시저장</b>은 고친 내용을 보관만 해요. <b>근무표 반영</b>을 누르면 시작 날짜부터 반영돼요. 근무표 사진은 위의 <b>공유하기</b>로 보내요." },
           { scene: "schedShare", sel: ".share-box", title: "근무표 사진", text: "이런 사진이 만들어져요. <b>카카오톡 전송하기</b>로 단톡방에 보내요." },
         ],
   calendar: (pc) => [
