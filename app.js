@@ -907,11 +907,28 @@ function renderAdminCalendar() {
 }
 
 
+function dayWeekDates(date) {
+  const base = new Date(`${date}T12:00:00`);
+  base.setDate(base.getDate()-base.getDay());
+  return Array.from({length:7},(_,i)=>{
+    const day = new Date(base);
+    day.setDate(base.getDate()+i);
+    return `${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,"0")}-${String(day.getDate()).padStart(2,"0")}`;
+  });
+}
+function renderDayWeek(date) {
+  const today=todayDateString();
+  return `<nav class="day-week" aria-label="선택한 주 날짜">${dayWeekDates(date).map((day,i)=>
+    `<button type="button" class="day-week-cell${day===date ? " selected" : ""}${day===today ? " today" : ""}${i===0 ? " sun" : i===6 ? " sat" : ""}" data-date="${day}" aria-label="${Number(day.slice(5,7))}월 ${Number(day.slice(8))}일 ${WEEKDAYS[i]}요일"${day===date ? ' aria-current="date"' : ""}><span class="day-week-wd">${WEEKDAYS[i]}</span><span class="day-week-num">${Number(day.slice(8))}</span></button>`
+  ).join("")}</nav>`;
+}
+
 function renderDayPage(date) {
   const page = `
     <div class="day-page" data-detail-date="${date}">
       <div class="day-page-inner">
         <button type="button" class="round-btn back-btn" data-action="go-home" aria-label="달력으로 돌아가기">${ICON_PREV}</button>
+        ${ADMIN_SITE && !isDesktop() ? renderDayWeek(date) : ""}
         ${renderDayArea(date, { closable: false })}
       </div>
     </div>`;
@@ -3450,7 +3467,7 @@ async function animateDateIntoDetails(date) {
   state.dayEnter = false;
   render();
   const box = app.querySelector(".day-page .day-area-inner");
-  const label = app.querySelector(".day-page .date-box-day");
+  const label = app.querySelector(".day-week-cell.selected .day-week-num") || app.querySelector(".day-page .date-box-day");
   if (!box || !label) { layer.remove(); return; }
   const content = Array.from(box.children);
   box.style.opacity = "0";
