@@ -1036,7 +1036,7 @@ input, textarea { caret-color: #59B5FF; }
   .m-won span { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--ink); font-size: 15px; font-weight: 600; pointer-events: none; transition: opacity .15s; }
   .m-won .field:placeholder-shown { text-align: left; }
   .m-won .field:placeholder-shown + span { opacity: 0; }
-  .m-allow-del { height: 42px; padding: 0 12px; border: 0; background: none; color: #FF05BF; font: inherit; font-size: 14px; font-weight: 600; }
+  .m-allow-del { height: 44px; padding: 0 16px; border: 1px solid #ffb3e6; border-radius: 12px; background: #fff0fb; color: #FF05BF; font: inherit; font-size: 14px; font-weight: 600; }
   .m-allow-inline + .m-allowance-add { margin-top: 10px; }
 
 }
