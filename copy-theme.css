@@ -770,3 +770,19 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
   .kc-content .staff .btn-ghost:not(.danger-ghost),
   .kc-content .add-form .btn-ghost { border: 0; border-radius: 14px; background: #f1f6fb; color: var(--ink); box-shadow: none; }
 }
+/* ---------- 급여 상세 (휴대폰) ---------- */
+@media (max-width: 767px) {
+  /* 이름 옆 v 아이콘 없이 (누르면 직원 바꾸기는 그대로) */
+  .m-pay-header-person .dd-btn svg { display: none; }
+  /* 명세서를 펼쳐도 박스 윗선은 제자리, 아래로만 늘어남 */
+  .m-pay-amount.is-payslip { margin-top: 12px; }
+  /* 받을 금액 박스 위아래 넉넉하게 */
+  .m-pay-detail .m-hero.small.m-pay-amount { padding-top: 24px; padding-bottom: 26px; }
+  /* 수당 추가하기: 점선 대신 실선 */
+  .m-allowance-add { border-style: solid; }
+  /* 날짜별 근무: 흰 박스, 위아래 조금 작게 */
+  .m-pay-detail .m-work-days { border: 1px solid var(--line); background: var(--paper); box-shadow: none; }
+  .m-pay-detail .m-work-days summary { padding: 11px 0; }
+  .m-pay-detail .m-work-days-heading { gap: 2px; }
+  .m-pay-detail .m-work-days-heading > strong { font-size: 24px; }
+}
