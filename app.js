@@ -3355,11 +3355,8 @@ function schedHelp() {
 // 근무표 칸을 누르면 편집 패널("월요일 · 근무자 추가")이 화면 위쪽에 보이게 옮기고 입력칸에 커서
 // (패널이 표 아래에 있는 좁은 화면에서 눌러도 안 보이는 일이 없게)
 function revealSlotPanel() {
-  if (!isDesktop()) {
-    // 직원 선택 칸에 커서를 두면 아이폰 기본 선택 목록이 떠 버린다 → 시간 칸일 때만
-    if (state.slotEdit?.empId || state.slotEdit?.fixedEmp) document.getElementById("slot-start")?.focus({ preventScroll: true });
-    return;
-  }
+  // 휴대폰: 칸만 열고 커서는 두지 않는다 (키보드나 기본 선택 목록이 저절로 뜨지 않게)
+  if (!isDesktop()) return;
   const panel = document.getElementById("tl-edit");
   if (!panel) return;
   const { top, bottom } = panel.getBoundingClientRect();
@@ -3551,6 +3548,22 @@ async function scheduleShare(button) {
 // ---------- 사용법 튜토리얼 (관리자 화면의 ?) ----------
 // 지금 화면 위를 어둡게 덮고, 설명할 버튼·칸만 밝게 뚫어 옆에 말풍선으로 설명한다. [다음]으로 하나씩.
 // sel 은 여러 개를 줄 수 있고, 화면에 보이는 첫 번째를 가리킨다. 지금 화면에 없는 단계는 건너뛴다.
+// 휴대폰: 직원 화면 · 급여 화면 단계 (목록 화면 튜토리얼에서는 scene 으로 그 화면을 열어 이어서 보여 준다)
+const EMP_DETAIL_STEPS = (scene) => [
+  { scene, sel: ".m-emp-pay", title: "시급", text: "숫자를 눌러 바로 고쳐요. 월급제 직원은 월급을 급여 화면 명세서에서 넣어요." },
+  { scene, sel: ".m-emp-week", title: "근무 요일", text: "요일 칸에 <b>7-12</b>, <b>18-2230</b>처럼 넣으면 그 요일 고정 근무 시간이 돼요. 비우면 쉬는 날이에요." },
+  { scene, sel: ".m-emp-settings", title: "설정", text: "<b>시급제 / 월급제</b>, <b>알바 / 직원</b>, <b>재직중 / 비활성</b>을 바꿔요. 그만둔 직원은 비활성으로 두면 기록은 남고 근무표 · 출퇴근에서만 빠져요." },
+  { scene, sel: ".m-emp-remove", title: "직원 삭제", text: "직원과 근무 기록을 모두 지워요. 기록을 남기려면 삭제 대신 <b>비활성</b>으로 바꿔요." },
+];
+const PAY_DETAIL_STEPS = (scene) => [
+  { scene, sel: ".m-pay-header-person", title: "직원 바꾸기", text: "위의 이름을 누르면 다른 직원 급여로 바로 넘어가요." },
+  { scene, sel: ".m-pay-amount", title: "받을 금액 · 명세서", text: "이 직원이 받을 금액이에요. <b>명세서</b>를 누르면 그 자리에서 급여명세서가 펼쳐지고, 안의 다운로드 버튼으로 이 직원 명세서 PDF를 받아요." },
+  { scene, sel: ".m-lines", title: "급여 내역", text: "기본급, 주휴수당, 수당, 세금이에요. 알바 기본급은 출근 기록의 근무시간으로, 주휴수당은 근무표 시간 기준으로 계산해요." },
+  { scene, sel: ".m-pay-detail .m-allowance-add", title: "수당 추가하기", text: "특근수당 같은 수당을 넣어요. 누르면 글래시 창이 떠요." },
+  { scene: "allow", sel: ".m-allow-card", title: "수당 입력", text: "수당 이름과 금액을 넣으면 <b>받을 금액</b>이 바로 바뀌어요. <b>수당 추가하기</b>로 여러 개 넣고 <b>저장</b>해요. 월급제 직원은 여기서 월급 · 식대 · 공제액도 넣어요." },
+  { scene, sel: ".m-work-days", title: "날짜별 근무", text: "누르면 날짜별 근무 시간이 펼쳐지고, 맨 아래 <b>공유하기</b>로 이 직원의 한 달 근무를 사진으로 보내요." },
+];
+
 const TOURS = {
   employees: (pc) =>
     pc
@@ -3564,12 +3577,13 @@ const TOURS = {
           { sel: "table.schedule tbody tr:first-child [data-action=toggle-role]", title: "알바 · 직원", text: "직원으로 바꾸면 목록 맨 위로 오고 월급제가 돼요. 다시 알바로 바꾸면 시급제로 돌아가요." },
         ]
       : [
-          { sel: ".m-add", title: "직원 추가", text: "여기를 누르면 직원 추가 창이 열려요." },
-          { scene: "addSheet", sel: ".sheet", title: "직원 추가 창", text: "알바 / 직원을 고르고 이름을 넣어요. 알바는 시급, 직원은 기본급(월급)과 식대(선택)를 넣고 <b>추가</b>를 눌러요." },
-          { sel: ".staff-link", title: "직원용 달력 주소", text: "직원들이 출근과 퇴근을 찍는 달력 주소예요. <b>주소 복사</b>로 단톡방에 보내 주세요." },
-          { sel: ".m-list .m-row", title: "직원 누르기", text: "직원을 누르면 정보 창이 열려요." },
-          { scene: "empSheet", sel: ".sheet", title: "직원 정보", text: "요일별 근무 시간, 시급, 재직중·비활성, 알바·직원, 시급제·월급제, 입사일·퇴사일을 여기서 바꿔요." },
+          { sel: ".m-emp-hero .m-add", title: "직원 추가", text: "누르면 직원 추가 창이 떠요." },
+          { scene: "addSheet", sel: ".m-add-emp-card", title: "직원 추가 창", text: "<b>알바 / 직원</b>을 고르고 이름을 넣어요. 알바는 시급, 직원은 기본급(월급)과 식대(선택)를 넣고 <b>추가</b>를 눌러요. 전화번호는 비워도 돼요." },
+          { sel: ".staff-link", title: "직원용 달력 주소", text: "직원들이 출근을 찍는 달력 주소예요. <b>주소 복사</b>로 단톡방에 보내 주세요." },
+          { sel: ".m-list .m-row", title: "직원 누르기", text: "직원을 누르면 그 직원 화면으로 가요." },
+          ...EMP_DETAIL_STEPS("empDetail"),
         ],
+  "employee-detail": () => EMP_DETAIL_STEPS(),
   schedule: (pc) =>
     pc
       ? [
@@ -3584,39 +3598,50 @@ const TOURS = {
           { scene: "schedShare", sel: ".share-box", title: "근무표 사진", text: "이런 사진이 만들어져요. <b>복사하기</b>를 누르고 단톡방에 붙여넣으면 돼요." },
         ]
       : [
-          { sel: ".m-period", title: "근무표 시작 날짜", text: "이 근무표를 언제부터 쓸지 숫자 8자리로 입력해요. 저장할 때마다 한 번씩 다시 입력해야 저장돼요." },
-          { sel: ".m-days", title: "요일 고르기", text: "요일을 누르면 그날 근무자가 아래에 나와요. 옆으로 밀어도 요일이 바뀌어요." },
-          { sel: ".m-shift", title: "근무자 누르기", text: "근무자를 누르면 고치는 창이 열려요." },
-          { scene: "slot", sel: ".sheet", title: "근무 고치기 · 삭제", text: "시작·끝 시간을 고치고 <b>완료</b>, 빼려면 <b>근무 삭제</b>를 눌러요." },
-          { sel: ".m-add-shift", title: "근무자 추가", text: "이 요일에 근무자를 추가해요." },
-          { scene: "slotAdd", sel: ".sheet", title: "근무자 추가 창", text: "직원을 고르고 시간을 넣은 뒤 <b>완료</b>를 눌러요." },
-          { sel: ".m-savebar", title: "임시저장 · 근무표 반영", text: "<b>임시저장</b>은 고친 내용을 보관만 해요. <b>근무표 반영</b>을 누르면 시작 날짜부터 반영돼요. 근무표 사진은 위의 <b>공유하기</b>로 보내요." },
-          { scene: "schedShare", sel: ".share-box", title: "근무표 사진", text: "이런 사진이 만들어져요. <b>공유하기</b>로 단톡방에 보내요." },
+          { sel: ".m-sched-hero", title: "적용 시작일", text: "이 근무표를 언제부터 쓸지예요. 날짜를 눌러 숫자 8자리로 고쳐요(예: 20261201). 아래 <b>근무표 반영</b>을 누르면 이 날짜부터 반영돼요." },
+          { sel: ".m-share-btn", title: "공유하기", text: "누르면 지금 근무표를 사진으로 만들어요." },
+          { scene: "schedShare", sel: ".share-box", title: "근무표 사진", text: "이런 사진이 만들어져요. <b>전송하기</b>로 단톡방에 보내거나 <b>사진 저장</b>으로 앨범에 저장해요." },
+          { sel: ".m-days", title: "요일 고르기", text: "요일을 누르면 그날 근무자가 아래에 나와요." },
+          { sel: "#sched-day-list .m-shift", title: "근무자 누르기", text: "근무자를 누르면 그 줄이 그 자리에서 수정 칸으로 바뀌어요." },
+          { scene: "slot", sel: "#m-slot-edit", title: "근무 고치기 · 삭제", text: "시작·끝 시간을 고치고 <b>완료</b>, 이 요일 근무를 빼려면 <b>근무 삭제</b>를 눌러요. <b>취소</b>하면 고치기 전으로 돌아가요." },
+          { sel: ".m-add-shift", title: "근무자 추가", text: "이 요일에 근무자를 넣어요. 누르면 글래시 창이 떠요." },
+          { scene: "slotAdd", sel: ".m-glass-form", title: "근무자 추가 창", text: "<b>직원 선택</b>을 눌러 목록에서 고르고 시간을 넣은 뒤 <b>완료</b>를 눌러요. 그 요일 근무가 없는 직원만 목록에 나와요." },
+          { sel: ".m-savebar [data-action=open-sched-history]", title: "목록", text: "고친 내용은 자동으로 <b>임시저장</b>돼요. <b>목록</b>에서는 지금까지 반영한 근무표들을 시작 날짜별로 보고 불러올 수 있어요." },
+          { scene: "schedHistory", sel: ".m-blur-card", title: "근무표 목록", text: "누르면 그 근무표를 불러와요. 불러온 뒤 고치고 <b>근무표 반영</b>을 누르면 새 근무표가 돼요." },
+          { sel: ".m-savebar [data-action=schedule-save]", title: "근무표 반영", text: "적용 시작일부터 직원 화면 · 출퇴근 · 급여에 반영돼요. 그 전 날짜의 기록은 그대로예요." },
         ],
-  calendar: (pc) => [
-    ...(pc ? [
-      { sel: ".cal-head", title: "달 바꾸기", text: "화살표로 지난달, 다음 달을 봐요." },
-      { sel: [".cell:has(.day-num.today)", ".grid .cell"], title: "날짜 칸", text: "그날 출근 기록이 이름과 시간으로 보여요. 근무표보다 <b style=\"color:var(--more)\">더 일하면 파랑</b>, <b style=\"color:var(--red)\">덜 일하면 빨강</b>이에요. 날짜를 누르면 그날이 열려요." },
-    ] : [
-      { sel: ".kc-cal", title: "날짜 고르기", text: "날짜를 누르면 아래에 그날 출근 기록과 근무자가 나와요. 옆으로 밀면 지난주 · 다음 주예요. <b style=\"color:#59B5FF\">파란 점</b>은 기록이 있는 날, <b style=\"color:var(--red)\">분홍 점</b>은 수정 요청처럼 확인할 게 있는 날이에요." },
-      { sel: ".m-cal-back", title: "달 전체 보기", text: "위의 <b>&lt; 월</b>이나 아래 화살표를 누르면 달 전체가 펼쳐져요. 위아래로 넘기면 한 달씩, 날짜를 누르면 그날로 돌아와요. 펼친 상태에서 <b>&lt; 연도</b>를 누르면 한 해 열두 달이 작게 보여요." },
-    ]),
-    { scene: "day", sel: ".date-box", title: "그날 출근 기록", text: "날짜를 누르면 이렇게 열려요. 여기 보이는 출퇴근 시간이 급여에 들어가요. 찍은 시각을 <b>10분 단위로 반올림</b>한 시간이에요(13:52 → 13:50, 13:55 → 14:00)." },
-    { scene: "day", sel: ".staff", title: "근무 예정", text: "그날 근무표에 있는 사람이에요. 이름 밑 시간은 <b>근무표 시간</b>이라 출퇴근 기록을 고쳐도 바뀌지 않아요." },
-    { scene: "staff", sel: ".staff-item.expanded", title: "출근 처리", text: "출근 기록이 없는 사람은 이름을 눌러 <b>출근 처리</b>해요. 근무표 시간대로 위쪽 출근 기록에 들어가요. 앞으로의 날짜는 여기서 <b>수정</b>으로 그날만 근무 시간을 바꿔요." },
-    { scene: "rec", sel: ".in-action", title: "출퇴근 시간 수정", text: "위쪽 출근 기록에서 이름을 누르면 <b>수정</b>과 <b>기록 삭제</b>가 나와요. 고친 시간도 <b>10분 단위로 반올림</b>돼요(14:45 → 14:50). 찍은 시간보다 우선하고 급여에 바로 반영돼요. 퇴근을 안 찍어서 <b>퇴근 확인 필요</b>로 뜬 날, 깜빡하고 늦게 찍은 날도 여기서 고쳐요." },
-    { scene: "add", sel: "#add-extra", title: "대타 · 추가 근무", text: "<b>+</b>를 누르면 이름과 시간을 넣어 그날만 근무자를 추가해요. 직원 달력에서는 오늘 날짜에 이름만 넣고, 시간은 출근·퇴근을 찍으면 정해져요. 그런 대타가 퇴근을 안 찍으면 다음 날 <b>퇴근 확인 필요</b>로 떠요. 처음 보는 이름이면 새 직원으로 등록할지 물어요." },
-  ],
+  calendar: (pc) =>
+    pc
+      ? [
+          { sel: ".cal-head", title: "달 바꾸기", text: "화살표로 지난달, 다음 달을 봐요." },
+          { sel: [".cell:has(.day-num.today)", ".grid .cell"], title: "날짜 칸", text: "그날 출근 기록이 이름과 시간으로 보여요. 근무표보다 <b style=\"color:var(--more)\">더 일하면 파랑</b>, <b style=\"color:var(--red)\">덜 일하면 빨강</b>이에요. 날짜를 누르면 그날이 열려요." },
+          { scene: "day", sel: ".date-box", title: "그날 출근 기록", text: "날짜를 누르면 이렇게 열려요. 여기 보이는 시간이 급여에 들어가요. 직원은 <b>출근만</b> 찍어요. 근무표 시작 전에 찍으면 <b>근무표 시작 시간</b>으로, 늦게 찍으면 찍은 시각을 <b>10분 단위로 반올림</b>한 시간(13:04 → 13:00, 13:05 → 13:10)으로 들어가요. 퇴근은 따로 안 찍고 <b>근무표 끝나는 시간</b>으로 들어가요." },
+          { scene: "day", sel: ".staff", title: "근무 예정", text: "그날 근무표에 있는 사람이에요. 이름 밑 시간은 <b>근무표 시간</b>이라 출퇴근 기록을 고쳐도 바뀌지 않아요." },
+          { scene: "staff", sel: ".staff-item.expanded", title: "출근 처리", text: "출근 기록이 없는 사람은 이름을 눌러 <b>출근 처리</b>해요. 근무표 시간대로 출근 기록에 들어가요. 앞으로의 날짜는 여기서 <b>수정</b>으로 그날만 근무 시간을 바꿔요." },
+          { scene: "rec", sel: ".in-action", title: "출퇴근 시간 수정", text: "출근 기록에서 이름을 누르면 <b>수정</b>과 <b>기록 삭제</b>가 나와요. 고친 시간은 급여에 바로 반영돼요." },
+          { scene: "add", sel: "#add-extra", title: "대타 · 추가 근무", text: "<b>+</b>를 누르면 이름과 시간을 넣어 그날만 근무자를 추가해요. 처음 보는 이름이면 새 직원으로 등록할지 물어요." },
+        ]
+      : [
+          { sel: ".kc-scroller", title: "날짜 고르기", text: "날짜를 누르면 아래에 그날 출근 기록과 근무자가 나와요. 옆으로 밀면 지난주 · 다음 주예요. <b style=\"color:#59B5FF\">파란 점</b>은 기록이 있는 날이에요." },
+          { sel: ".m-cal-back", title: "달 전체 보기", text: "<b>&lt; 월</b>이나 날짜 아래 화살표를 누르면 달 전체가 펼쳐져요. 위아래로 넘기면 한 달씩 바뀌고, 날짜를 누르면 그날로 돌아와요. 펼친 상태에서 <b>&lt; 연도</b>를 누르면 올해 열두 달이 작게 보여요." },
+          { sel: ".change-inbox", title: "근무 수정 요청", text: "직원이 보낸 근무 시간 수정 요청이에요. <b>승인</b>하면 급여에 반영되고, <b>반려</b>하면 그대로예요." },
+          { scene: "kcDay", sel: ".m-date-hero", title: "그날 출근 기록", text: "고른 날짜와 출근한 사람이에요. 여기 보이는 시간이 급여에 들어가요. 직원은 <b>출근만</b> 찍어요. 근무표 시작 전에 찍으면 <b>근무표 시작 시간</b>으로, 늦게 찍으면 찍은 시각을 <b>10분 단위로 반올림</b>한 시간(13:04 → 13:00, 13:05 → 13:10)으로 들어가요. 퇴근은 따로 안 찍고 <b>근무표 끝나는 시간</b>으로 들어가요." },
+          { scene: "kcDay", sel: ".kc-content .staff", title: "근무자", text: "그날 근무표에 있는 사람이에요. 이름 밑 시간은 <b>근무표 시간</b>이에요." },
+          { scene: "kcStaff", sel: ".kc-content .staff-item.expanded", title: "출근 처리", text: "아직 출근 안 한 사람은 이름을 눌러 <b>출근 처리</b>해요. 근무표 시간대로 들어가요. 앞으로의 날짜는 <b>수정</b>으로 그날만 근무 시간을 바꿔요." },
+          { scene: "kcRec", sel: ".kc-content .staff-item.expanded", title: "기록 수정 · 삭제", text: "출근한 사람을 누르면 <b>수정</b>과 <b>기록 삭제</b>가 나와요. 고친 시간은 급여에 바로 반영돼요." },
+          { scene: "kcDay", sel: ".kc-content .add-btn", title: "근무자 추가", text: "근무표에 없는 대타나 추가 근무를 넣어요. 누르면 글래시 창이 떠요." },
+          { scene: "kcAdd", sel: ".m-glass-form", title: "근무자 추가 창", text: "이름과 시간을 넣고 <b>등록</b>해요. 처음 보는 이름이면 새 직원으로 등록할지 물어요." },
+        ],
   // 직원용 달력 (출근 화면)
   home: (pc) => [
     { sel: ".cal-head", title: "달 바꾸기", text: "화살표로 지난달, 다음 달을 봐요." },
     pc
       ? { sel: [".cell:has(.day-num.today)", ".grid .cell"], title: "날짜 칸", text: "그날 출근한 사람과 시간이 보여요. 근무표보다 <b style=\"color:var(--more)\">더 일하면 파랑</b>, <b style=\"color:var(--red)\">덜 일하면 빨강</b>이에요. 날짜를 누르면 그날이 열려요." }
       : { sel: [".cell:has(.day-num.today)", ".grid .cell"], title: "날짜 칸", text: "점이 있는 날은 출근 기록이 있는 날이에요. 날짜를 누르면 그날 화면이 열려요." },
-    { scene: "day", sel: ".date-box", title: "출근 기록", text: "날짜를 누르면 이렇게 열려요. 보이는 시간은 출근·퇴근을 찍은 시각을 <b>10분 단위로 반올림</b>한 시간이에요(13:52 → 13:50, 13:55 → 14:00)." },
+    { scene: "day", sel: ".date-box", title: "출근 기록", text: "날짜를 누르면 이렇게 열려요. 근무표 시작 전에 찍으면 <b>근무표 시작 시간</b>, 늦게 찍으면 찍은 시각을 <b>10분 단위로 반올림</b>한 시간이 출근 시간이 돼요." },
     { scene: "day", sel: ".staff", title: "오늘 근무자", text: "근무표에 있는 오늘 근무자예요. 이름 밑 시간은 <b>근무표 시간</b>이에요. <b>본인 이름</b>을 찾아 눌러요." },
-    { scene: "staff", sel: ".staff-item.expanded", title: "출근 · 퇴근 찍기", text: "이름을 누르면 <b>출근</b> 버튼이 나와요. 매장에 도착하면 누르고, 일이 끝나면 다시 이름을 눌러 <b>퇴근</b>을 눌러 주세요. 찍은 시각은 10분 단위로 반올림돼서 급여에 들어가요. 자정을 넘겨 끝나면 다음 날 화면 맨 위에 퇴근 버튼이 나와요. 지난 날 퇴근을 못 찍었으면 관리자에게 말해 주세요." },
-    { scene: "add", sel: "#add-extra", title: "대타 · 추가 근무", text: "근무표에 없는데 오늘 일하게 됐으면 <b>+</b>를 눌러 <b>이름만</b> 넣고 <b>등록</b>해요. 그다음 이름을 눌러 출근과 퇴근을 찍으면 그 시간이 근무 시간이 돼요." },
+    { scene: "staff", sel: ".staff-item.expanded", title: "출근 · 퇴근 찍기", text: "이름을 누르면 <b>출근</b> 버튼이 나와요. 매장에 도착하면 <b>출근만</b> 눌러 주세요. 퇴근은 근무표 끝나는 시간으로 자동으로 들어가요. 시간이 실제와 다르면 이름을 눌러 <b>수정 요청</b>을 보내면 사장님이 확인해요." },
+    { scene: "add", sel: "#add-extra", title: "대타 · 추가 근무", text: "근무표에 없는데 오늘 일하게 됐으면 <b>+</b>를 눌러 <b>이름만</b> 넣고 <b>등록</b>해요. 근무표 시간이 없으니 이름을 눌러 <b>출근</b>과 <b>퇴근</b>을 모두 찍어 주세요." },
   ],
   records: (pc) =>
     pc
@@ -3641,20 +3666,15 @@ const TOURS = {
           { sel: ".section-head [data-action=payslip-pdf-all]", title: "명세서 PDF", text: "직원마다 따로 급여명세서 PDF를 받아요. 직원에게 보내 주면 돼요." },
         ]
       : [
-          { sel: ".m-top .dd", title: "달 바꾸기", text: "상단 연월을 누르면 월 선택 목록이 펼쳐져요. 확인할 달을 골라 주세요." },
-          { sel: ".pay-check", title: "퇴근 확인 필요", text: "출근을 찍고 근무표 종료 시간이 지나도록 퇴근을 안 찍은 기록이에요. 눌러서 그날 화면으로 간 뒤, 출근 기록에서 이름을 눌러 <b>수정</b>으로 시간을 넣으면 사라져요." },
-          { sel: ".m-hero", title: "이번 달 합계", text: "실지급액 합계예요. 오른쪽에서 알바 세금(3.3% / 공제 안 함)을 바꿔요." },
-          { sel: ".m-pay", title: "직원 누르기", text: "직원을 누르면 그 사람 급여 내역이 열려요." },
-          { scene: "paySheet", sel: ".sheet .m-hero", title: "받을 금액", text: "이 직원이 받을 금액과 기본급, 주휴수당, 세금 내역이에요. 알바 기본급은 찍은 시각을 <b>10분 단위로 반올림</b>한 근무시간으로 계산해요(퇴근을 안 찍은 날은 근무표 종료 시각)." },
-          { scene: "paySheet", sel: ".sheet .m-share", title: "공유하기", text: "누르면 이 직원의 한 달 근무를 달력 사진으로 만들어요." },
-          { scene: "share", sel: ".share-box img", title: "근무 사진 미리보기", text: "이런 사진이 만들어져요. 날짜별 근무 시간과 한 달 합계가 들어가요." },
-          { scene: "share", sel: ".share-actions", title: "공유하기", text: "<b>공유하기</b>를 누르면 공유 창이 열려서 카톡 채팅방을 고르면 돼요. <b>사진 저장</b>으로 앨범에 저장할 수도 있어요." },
-          { scene: "paySheet", sel: ".sheet .sheet-actions", title: "수당 · 명세서 / 명세서 PDF", text: "<b>수당 · 명세서</b>에서 수당(직원은 월급·공제액)을 넣고, <b>명세서 PDF</b>로 명세서를 받아요." },
-          { scene: "payslipAlba", sel: ".ps-allow", title: "알바 명세서 · 수당 입력", text: "특근수당 같은 수당을 이름과 금액으로 넣고 <b>저장</b>해요." },
-          { scene: "payslipMgr", sel: ".sal-box", title: "직원 명세서 · 월급 · 공제액", text: "직원은 기본급·식대와 세무사에게 받은 공제액을 넣어요. 한 번 넣으면 다음 달에도 그대로 이어져요." },
-          { sel: ".m-btns [data-action=export-ledger]", title: "엑셀 파일", text: "세무사에게 보낼 급여대장이에요." },
-          { sel: ".m-btns [data-action=payslip-pdf-all]", title: "명세서 PDF 전체", text: "직원마다 따로 급여명세서 PDF를 받아요." },
+          { sel: ".m-top .dd", title: "달 바꾸기", text: "위의 연월을 누르면 달 목록이 펼쳐져요. 확인할 달을 골라요." },
+          { sel: ".pay-check", title: "퇴근 확인 필요", text: "근무표에 없던 대타가 출근만 찍고 퇴근을 안 찍은 기록이에요. 눌러서 그날로 간 뒤 이름을 눌러 <b>수정</b>으로 시간을 넣으면 사라져요." },
+          { sel: ".m-pay-hero", title: "이번 달 합계", text: "이번 달 실지급액 합계예요. 아래에서 알바 세금(3.3% 공제 / 공제 안 함)과 <b>급여 지급일</b>을 골라요. 지급일은 명세서에 들어가요." },
+          { sel: ".m-hero-dl", title: "엑셀 · 명세서 받기", text: "누르면 받을 파일을 고르는 창이 떠요." },
+          { scene: "exports", sel: ".m-blur-card", title: "엑셀 파일 · 명세서 PDF", text: "<b>엑셀 파일</b>은 세무사에게 보낼 급여대장, <b>명세서 PDF</b>는 직원 모두의 급여명세서를 한 번에 받아요." },
+          { sel: ".m-pay", title: "직원 누르기", text: "직원을 누르면 그 사람 급여 화면으로 가요." },
+          ...PAY_DETAIL_STEPS("payDetail"),
         ],
+  "pay-detail": () => PAY_DETAIL_STEPS(),
 };
 
 // 튜토리얼이 잠깐 펼쳐 보이는 화면 (끝나면 원래대로). hash 가 있으면 그 화면으로 갔다가 set 을 한다.
@@ -3712,7 +3732,6 @@ const TOUR_SCENES = {
       const id = firstAlbaEmp() ?? firstPayEmp();
       if (!id) return;
       if (isDesktop()) state.payroll.employeeId = id;
-      else state.sheet = { type: "pay", id };
       render();
       await shareTimesheetImage(document.createElement("button"), id);
     },
@@ -3724,7 +3743,42 @@ const TOUR_SCENES = {
   slotAdd: { set: () => tourSlot(true) },
   empSheet: { set: () => (state.sheet = { type: "emp", id: store.employees[0]?.id ?? null }) },
   addSheet: { set: () => (state.sheet = { type: "add-emp", id: null }) },
+  // 휴대폰 화면
+  empDetail: { hash: () => (store.employees[0] ? `#/employees/${encodeURIComponent(store.employees[0].id)}` : null) },
+  payDetail: { hash: () => tourPayHash() },
+  allow: {
+    hash: () => tourPayHash(),
+    set: () => {
+      const id = tourPayEmp();
+      if (!id) return;
+      openPayslipState(id);
+      state.allowDraft.push({ name: "특근수당", amount: 20000 }); // 보여 주기용 (저장하지 않음)
+    },
+  },
+  exports: { set: () => (state.exportsOpen = true) },
+  schedHistory: { set: () => (state.historyOpen = true) },
+  kcDay: { hash: () => "#/calendar", set: () => (state.calDay = todayDateString()) },
+  kcStaff: {
+    hash: () => "#/calendar",
+    set: () => {
+      const d = todayDateString();
+      state.calDay = d;
+      const list = scheduledOn(d);
+      state.expandedId = (list.find((e) => !recordFor(e.id, d)) ?? list[0])?.id ?? null;
+    },
+  },
+  kcRec: {
+    hash: () => "#/calendar",
+    set: () => {
+      const d = tourRecDate();
+      state.calDay = d;
+      state.expandedId = recordsOn(d)[0]?.employeeId ?? null;
+    },
+  },
+  kcAdd: { hash: () => "#/calendar", set: () => Object.assign(state, { calDay: todayDateString(), adding: true }) },
 };
+const tourPayEmp = () => (route().name === "pay-detail" ? route().id : firstAlbaEmp() ?? firstPayEmp());
+const tourPayHash = () => (tourPayEmp() ? `#/records/${encodeURIComponent(tourPayEmp())}/${state.payroll.month}` : null);
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function applyTourScene(name) {
@@ -3732,7 +3786,7 @@ async function applyTourScene(name) {
   const b = tour.base;
   // 튜토리얼 시작 때 모습으로 되돌린 뒤 이 단계의 화면을 펼친다
   closeTourShare();
-  Object.assign(state, { selectedDate: b.selectedDate, expandedId: null, expandedRecId: null, adding: false, editingId: null, editingWhere: null, sheet: null, payslipId: null, allowDraft: null, salDraft: null, slotEdit: null, contractDraft: null });
+  Object.assign(state, { selectedDate: b.selectedDate, calDay: b.calDay, expandedId: null, expandedRecId: null, adding: false, editingId: null, editingWhere: null, sheet: null, payslipId: null, allowDraft: null, salDraft: null, slotEdit: null, contractDraft: null, exportsOpen: false, historyOpen: false });
   state.payroll.employeeId = b.payrollEmp;
   const sc = name ? TOUR_SCENES[name] : null;
   const target = sc?.hash?.() ?? b.hash;
@@ -3742,7 +3796,7 @@ async function applyTourScene(name) {
     await sleep(80); // 화면이 바뀐 뒤에 펼친다
     tour.nav = false;
   }
-  const done = sc?.set();
+  const done = sc?.set?.();
   Object.assign(state, { modalEnter: false, sheetEnter: false, dayEnter: false, expandEnter: false });
   render();
   if (done instanceof Promise) await done.catch(() => {}); // 사진 만들기처럼 시간이 걸리는 장면
@@ -3795,7 +3849,7 @@ function startTour(page) {
   document.body.appendChild(root);
   tour = {
     steps, i: 0, root, timer: setInterval(placeTour, 250), scene: null, nav: false, busy: false,
-    base: { hash: location.hash, selectedDate: state.selectedDate, payrollEmp: state.payroll.employeeId },
+    base: { hash: location.hash, selectedDate: state.selectedDate, calDay: state.calDay, payrollEmp: state.payroll.employeeId },
   };
   document.addEventListener("keydown", tourKey, true);
   window.addEventListener("resize", placeTour);
@@ -3869,7 +3923,7 @@ function endTour() {
   // 펼쳐 둔 화면을 시작할 때 모습으로
   closeTourShare();
   if (t.scene) {
-    Object.assign(state, { selectedDate: t.base.selectedDate, expandedId: null, expandedRecId: null, adding: false, sheet: null, payslipId: null, allowDraft: null, salDraft: null, slotEdit: null, contractDraft: null });
+    Object.assign(state, { selectedDate: t.base.selectedDate, calDay: t.base.calDay, expandedId: null, expandedRecId: null, adding: false, sheet: null, payslipId: null, allowDraft: null, salDraft: null, slotEdit: null, contractDraft: null, exportsOpen: false, historyOpen: false });
     state.payroll.employeeId = t.base.payrollEmp;
     if (location.hash !== t.base.hash) {
       t.nav = true;
@@ -4028,7 +4082,7 @@ function render() {
     }
   }
 
-  if (r.name === "lock" || r.name === "pick") {
+  if ((r.name === "lock" || r.name === "pick") && isDesktop()) {
     const first = document.querySelector(".lock-form .field");
     if (first && !first.value) first.focus();
   }
@@ -4925,7 +4979,7 @@ app.addEventListener("click", (e) => {
       );
       return;
     case "start-tour":
-      startTour(route().name);
+      startTour(route().name === "day" && mobileAdminCal() ? "calendar" : route().name);
       return;
     case "export-ledger":
       exportLedger(el);
@@ -5028,11 +5082,8 @@ app.addEventListener("click", (e) => {
     case "open-payslip":
       state.modalEnter = true;
       openPayslipState(id);
-      // 휴대폰: 수당 추가하기 한 번에 빈 칸을 열고 바로 입력
-      if (!isDesktop()) {
-        state.allowDraft.push({ name: "", amount: 0 });
-        setTimeout(() => [...document.querySelectorAll(".m-allow-inline [data-allow=name]")].pop()?.focus());
-      }
+      // 휴대폰: 수당 추가하기 한 번에 빈 칸까지 연다 (키보드는 칸을 누를 때만)
+      if (!isDesktop()) state.allowDraft.push({ name: "", amount: 0 });
       break;
     case "close-payslip":
       state.payslipId = null;
@@ -5050,7 +5101,6 @@ app.addEventListener("click", (e) => {
       break;
     case "add-allowance":
       state.allowDraft.push({ name: "", amount: 0 });
-      if (!isDesktop()) setTimeout(() => [...document.querySelectorAll(".m-allow-inline [data-allow=name]")].pop()?.focus());
       break;
     case "remove-allowance":
       state.allowDraft.splice(Number(el.dataset.index), 1);
@@ -5125,15 +5175,7 @@ function moveMonth(delta) {
   state.month = m < 1 ? 12 : m > 12 ? 1 : m;
 }
 
-// 근무표 요일 칩 순서 (월 ~ 일)
-function moveSchedDay(delta) {
-  const order = [1, 2, 3, 4, 5, 6, 0];
-  const now = state.schedDay ?? weekdayOf(todayDateString());
-  state.schedDay = order[(order.indexOf(now) + delta + 7) % 7];
-  state.dayListEnter = true;
-}
-
-// 달력은 좌우로 밀면 달이, 근무표 근무자 목록은 요일이 넘어간다
+// 달력은 좌우로 밀면 달이, 나머지 자리는 옆 탭으로 넘어간다
 let swipe = null;
 app.addEventListener(
   "touchstart",
@@ -5155,8 +5197,6 @@ app.addEventListener(
     if (target.closest(".sheet, input, select, textarea, .sched-scroll, .ts-mobile, .m-tabbar, .kc-scroller, .tour-pop")) return;
     if (target.closest(".cal-wrap")) {
       moveMonth(dx < 0 ? 1 : -1);
-    } else if (target.closest("#sched-day-list, .m-days")) {
-      moveSchedDay(dx < 0 ? 1 : -1);
     } else {
       // 나머지 자리: 하단 메뉴처럼 옆 탭으로 (왼쪽으로 밀면 오른쪽 탭). 직원 · 급여 상세 같은 상세 화면에서는 안 함
       if (!ADMIN_SITE || tour) return;
