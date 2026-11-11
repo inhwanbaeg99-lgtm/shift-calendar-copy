@@ -961,3 +961,5 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
 .logo.big { box-shadow: 0 10px 30px #59b5ff1f; }
 /* 펼친 명세서: 닫기 버튼 아래 ↔ 명세서 용지 위 간격 10px */
 .m-pay-amount.is-payslip .pay-preview-toolbar { height: 48px; }
+/* 유리 카드: 더 불투명하게 */
+.m-blur-card { background: #ffffffd9; }
