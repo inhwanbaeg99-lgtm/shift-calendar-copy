@@ -493,3 +493,6 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
 .m-work-days summary::after { transform: rotate(45deg); transition: transform .3s cubic-bezier(.22,.75,.2,1); }
 .m-work-days[open] summary::after { transform: rotate(225deg); }
 @media (prefers-reduced-motion: reduce) { .m-work-days summary::after { transition: none; } }
+
+.m-pay-detail .m-work-days .m-share { background: #59B5FF; border-color: #59B5FF; color: #18334b; margin-bottom: 16px; }
+.m-pay-detail .m-work-days .m-share:hover { background: #42aaff; border-color: #42aaff; }

@@ -1491,8 +1491,8 @@ function renderPaySheet(emp) {
       }
     </ul>
     <button type="button" class="m-allowance-add" data-action="open-payslip" data-id="${emp.id}"><span aria-hidden="true">＋</span> 수당 추가하기</button>
-    <details class="m-work-days"><summary><span class="m-work-days-heading"><span>날짜별 근무</span><strong>${hrs(r.hours)}</strong></span></summary><ul class="m-days-list">${days || `<li><span>근무 기록이 없어요</span></li>`}</ul></details>
-    <button type="button" class="btn-ghost m-share" data-action="share-ts-image" data-id="${emp.id}">카카오톡 전송하기</button>
+    <details class="m-work-days"><summary><span class="m-work-days-heading"><span>날짜별 근무</span><strong>${hrs(r.hours)}</strong></span></summary><ul class="m-days-list">${days || `<li><span>근무 기록이 없어요</span></li>`}</ul>
+    <button type="button" class="btn-ghost m-share" data-action="share-ts-image" data-id="${emp.id}">카카오톡 전송하기</button></details>
 `;
 }
 
