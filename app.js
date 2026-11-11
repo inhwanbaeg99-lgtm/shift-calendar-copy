@@ -3447,77 +3447,67 @@ function navigate(hash) {
   else location.hash = hash;
 }
 
-// 날짜 원 이동 → 상세 박스로 확장 → 내용 표시의 3단계 전환
+// 누른 날짜의 주가 그대로 위로 올라가 주간 날짜 줄이 되고, 고른 날은 파란 원, 그 밑에 상세가 떠오른다
 async function animateDateIntoDetails(date) {
-  const source = app.querySelector(`[data-date="${date}"] .day-num`);
-  if (!source) { render(); return; }
-  const from = source.getBoundingClientRect();
-  const sourceStyle = getComputedStyle(source);
-  const startFont = {fontSize:sourceStyle.fontSize,fontWeight:sourceStyle.fontWeight,lineHeight:sourceStyle.lineHeight,letterSpacing:sourceStyle.letterSpacing,color:sourceStyle.color};
-  const layer = document.createElement("div");
-  layer.className = "date-morph-layer";
-  layer.setAttribute("aria-hidden", "true");
-  const shape = document.createElement("div");
-  shape.className = "date-morph-shape";
-  shape.style.background = date === todayDateString() ? "#59B5FF" : "#FFFFFF";
-
-  layer.append(shape);
-  document.body.append(layer);
+  const week = dayWeekDates(date);
+  const grid = app.querySelector(".grid");
+  if (!grid) { render(); return; }
+  // 달력 숫자들의 지금 자리를 기억해 둔다 (그 주는 위로 올라가고, 나머지는 겹쳐 그린 뒤 흐려지며 사라진다)
+  const from = new Map();
+  const ghost = document.createElement("div");
+  ghost.className = "date-morph-layer week-ghost";
+  ghost.setAttribute("aria-hidden", "true");
+  const weekTop = Math.min(...week.map(d => grid.querySelector(`[data-date="${d}"] .day-num`)?.getBoundingClientRect().top ?? Infinity));
+  grid.querySelectorAll(".day-num, .weekday, .dot.on").forEach(el => {
+    const r = el.getBoundingClientRect();
+    const cell = el.closest("[data-date]");
+    if (el.classList.contains("day-num") && week.includes(cell?.dataset.date)) {
+      from.set(cell.dataset.date, { rect: r, font: parseFloat(getComputedStyle(el).fontSize) });
+      return;
+    }
+    const cs = getComputedStyle(el);
+    const copy = document.createElement("span");
+    copy.textContent = el.textContent;
+    Object.assign(copy.style, {
+      position: "fixed", left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px`,
+      display: "flex", alignItems: "center", justifyContent: "center", boxSizing: "border-box",
+      font: cs.font, letterSpacing: cs.letterSpacing, color: cs.color, background: cs.backgroundColor,
+      borderRadius: cs.borderRadius, boxShadow: cs.boxShadow,
+    });
+    copy.dataset.dir = r.top < weekTop ? "-1" : "1";
+    ghost.append(copy);
+  });
+  document.body.append(ghost);
   state.pageEnter = false;
   state.dayEnter = false;
   render();
+  const strip = app.querySelector(".day-week");
   const box = app.querySelector(".day-page .day-area-inner");
-  const label = app.querySelector(".day-week-cell.selected .day-week-num") || app.querySelector(".day-page .date-box-day");
-  if (!box || !label) { layer.remove(); return; }
-  const content = Array.from(box.children);
-  box.style.opacity = "0";
-  content.forEach(el => el.style.opacity = "0");
-  // 글자 폭과 블록 폭은 다르다. 원의 목적지는 숫자 글리프 중심으로 계산한다.
-  const to = label.getBoundingClientRect(), rect = box.getBoundingClientRect();
-  const range = document.createRange();
-  range.selectNodeContents(label);
-  const glyph = range.getBoundingClientRect();
-  const targetStyle = getComputedStyle(label);
-  const number = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  number.setAttribute("viewBox", "0 0 64 64");
-  number.setAttribute("class", "date-morph-number");
-  const numeral = document.createElementNS("http://www.w3.org/2000/svg", "text");
-  numeral.textContent = label.textContent;
-  Object.assign(numeral.style, {fontFamily:targetStyle.fontFamily,fontSize:targetStyle.fontSize,fontWeight:targetStyle.fontWeight,letterSpacing:targetStyle.letterSpacing,fill:targetStyle.color});
-  number.append(numeral);
-  const carrier = document.createElement("div");
-  carrier.className = "date-morph-carrier";
-  layer.append(carrier);
-  carrier.append(shape, number);
-  Object.assign(number.style, {position:"absolute",inset:"0",width:"100%",height:"100%",margin:"0",overflow:"visible",transform:"none",transformOrigin:"50% 50%"});
-  const ink = numeral.getBBox();
-  numeral.setAttribute("transform", `translate(${32-ink.x-ink.width/2} ${32-ink.y-ink.height/2})`);
-  Object.assign(shape.style, {position:"absolute",inset:"0",width:"100%",height:"100%",borderRadius:"50%"});
-  label.style.visibility = "hidden";
-  const size = 64;
-  const origin = {left:`${from.left}px`,top:`${from.top}px`,width:`${from.width}px`,height:`${from.height}px`};
-  const x = glyph.left + glyph.width/2 - size/2;
-  const y = to.top + to.height/2 - size/2;
-  const circle = {left:`${x}px`,top:`${y}px`,width:`${size}px`,height:`${size}px`};
-  Object.assign(carrier.style, {position:"fixed",...origin});
+  const ease = "cubic-bezier(.22,.75,.2,1)";
+  const anims = [];
   try {
-    const initialScale = parseFloat(startFont.fontSize) / parseFloat(targetStyle.fontSize) * size / from.width;
-    const numberGrow = number.animate([{transform:`scale(${initialScale})`},{transform:"scale(1)"}], {duration:420,easing:"cubic-bezier(.22,.75,.2,1)",fill:"forwards"});
-    await Promise.all([numberGrow.finished, carrier.animate([origin,circle], {duration:420,easing:"cubic-bezier(.22,.75,.2,1)",fill:"forwards"}).finished]);
-    if (!box.isConnected) return;
-    await shape.animate([
-      {left:"0px",top:"0px",width:`${size}px`,height:`${size}px`,borderRadius:"50%"},
-      {left:`${rect.left-x}px`,top:`${rect.top-y}px`,width:`${rect.width}px`,height:`${rect.height}px`,borderRadius:"20px",background:"#FFFFFF"}
-    ],{duration:380,easing:"cubic-bezier(.22,.75,.2,1)",fill:"forwards"}).finished;
-    box.style.opacity = "1";
-    const fades = content.map((el,i) => el.animate([{opacity:0},{opacity:1}],{duration:260,delay:i*55,easing:"ease-out",fill:"forwards"}));
-    shape.style.visibility = "hidden";
-    await Promise.all(fades.map(a => a.finished));
+    Array.from(ghost.children).forEach(el => anims.push(el.animate(
+      [{ opacity: 1, transform: "none" }, { opacity: 0, transform: `translateY(${el.dataset.dir * 18}px)` }],
+      { duration: 260, easing: "ease-out", fill: "forwards" })));
+    strip?.querySelectorAll(".day-week-cell").forEach(cell => {
+      const num = cell.querySelector(".day-week-num");
+      const start = from.get(cell.dataset.date);
+      if (start) {
+        const to = num.getBoundingClientRect();
+        const dx = start.rect.left + start.rect.width / 2 - (to.left + to.width / 2);
+        const dy = start.rect.top + start.rect.height / 2 - (to.top + to.height / 2);
+        const scale = start.font / parseFloat(getComputedStyle(num).fontSize);
+        anims.push(num.animate([{ transform: `translate(${dx}px,${dy}px) scale(${scale})` }, { transform: "none" }], { duration: 480, easing: ease }));
+      } else {
+        // 다른 달 날짜는 달력에 없으므로 제자리에서 나타난다
+        anims.push(num.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, delay: 220, easing: "ease-out", fill: "backwards" }));
+      }
+      anims.push(cell.querySelector(".day-week-wd").animate([{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }], { duration: 300, delay: 260, easing: "ease-out", fill: "backwards" }));
+    });
+    if (box) anims.push(box.animate([{ opacity: 0, transform: "translateY(28px)" }, { opacity: 1, transform: "none" }], { duration: 420, delay: 220, easing: ease, fill: "backwards" }));
+    await Promise.all(anims.map(a => a.finished.catch(() => {})));
   } finally {
-    box.style.removeProperty("opacity");
-    content.forEach(el => el.style.removeProperty("opacity"));
-    label.style.removeProperty("visibility");
-    layer.remove();
+    ghost.remove();
   }
 }
 

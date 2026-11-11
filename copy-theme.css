@@ -527,3 +527,10 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
   .day-week-cell, .day-week-cell.selected { border-color: transparent; background: transparent; box-shadow: none; }
   .day-week-cell.selected .day-week-num { color: #379fef; }
 }
+/* 상세 상단 주간 날짜: 고른 날은 달력의 오늘 표시처럼 파란 원 */
+@media (max-width: 767px) {
+  .day-week-cell { gap: 6px; }
+  .day-week-num { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 999px; }
+  .day-week-cell.selected .day-week-num { background: #59B5FF; color: #18334b; box-shadow: 0 8px 28px #59b5ff25; }
+}
+.week-ghost { pointer-events: none; }
