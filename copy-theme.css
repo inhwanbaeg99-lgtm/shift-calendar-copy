@@ -930,3 +930,10 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
   .m-emp-wage { justify-content: flex-start; }
   .m-emp-wage input.field { flex: 0 0 auto; min-width: 1.4em; max-width: 80%; }
 }
+/* 출·퇴근 날짜 카드 안 출근한 사람 칸: 직원 탭 '+ 직원 추가'와 같은 연한 하늘 박스 + 하늘 글자 */
+@media (max-width: 767px) {
+  .kc-content .m-in-boxes .in-item { border: 0; border-radius: 12px; background: #59b5ff20; box-shadow: none; }
+  .kc-content .m-in-boxes .in-row { border-radius: 12px; }
+  .kc-content .m-in-boxes .in-name, .kc-content .m-in-boxes .in-time { color: #379fef; }
+  .kc-content .m-in-boxes .in-time.under { color: var(--red); }
+}
