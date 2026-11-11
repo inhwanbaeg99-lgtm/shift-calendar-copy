@@ -455,3 +455,5 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
 
 .pay-inline-frame { position: relative; width: 100%; overflow: hidden; }
 .m-pay-amount { overflow-anchor: none; }
+/* 미리보기·PDF 공통: 지급 금액 가독성 강화 */
+.payslip .ps-net strong { font-size: 72px; line-height: 1.15; font-weight: 800; }
