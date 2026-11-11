@@ -1532,11 +1532,19 @@ function renderSheet() {
   let body = "";
   let close = "close-sheet";
   const r = route();
-  if (r.name === "schedule" && state.slotEdit && (isDesktop() || state.slotEdit.empId)) {
+  if (r.name === "schedule" && state.slotEdit && isDesktop()) {
     body = renderSlotPanel();
     close = "cancel-slot";
   } else if (state.sheet?.type === "emp" && employeeById(state.sheet.id)) body = renderEmpSheet(employeeById(state.sheet.id));
-  else if (state.sheet?.type === "add-emp") body = renderAddEmpSheet();
+  else if (state.sheet?.type === "add-emp") {
+    // 휴대폰: 직원 추가는 아래 시트 대신 글래시 박스로
+    if (!isDesktop())
+      return `
+    <div class="m-blur-layer" data-action="close-sheet">
+      <div class="m-blur-card m-add-emp-card" data-stop role="dialog" aria-modal="true" aria-label="직원 추가">${renderAddEmpSheet()}</div>
+    </div>`;
+    body = renderAddEmpSheet();
+  }
   else if (state.sheet?.type === "pay" && employeeById(state.sheet.id)) body = renderPaySheet(employeeById(state.sheet.id));
   if (!body) return "";
   const enter = state.sheetEnter;
@@ -1726,6 +1734,9 @@ function renderDayShifts() {
     .sort((a, b) => (a.shift.start < b.shift.start ? -1 : 1));
   const rows = people
     .map(({ e, shift }, i) => {
+      // 누른 근무자는 그 자리에서 바로 수정
+      if (state.slotEdit?.empId === e.id && String(state.slotEdit.wd) === String(wd))
+        return `<div class="m-slot-inline m-slot-edit" id="m-slot-edit">${renderSlotPanel()}</div>`;
       const hours = hoursBetween(kstIso("2026-01-05", shift.start), endIso("2026-01-05", shift.start, shift.end));
       return `
         <button type="button" class="m-shift m-row" style="--i:${i};--emp:${copyDisplayColor(e.color)}" data-action="edit-slot" data-wd="${wd}" data-id="${e.id}" data-start="${toMin(shift.start)}">
@@ -2023,7 +2034,9 @@ function previewPayslipFromAmount(id) {
 function renderPaySheet(emp) {
   const { month } = state.payroll;
   const recs = monthRecords(month, emp.id);
-  const r = payrollRow(emp, month, recs);
+  // 수당을 그 자리에서 고치는 중이면 입력한 대로 미리 계산
+  const editing = !isDesktop() && state.payslipId === emp.id;
+  const r = editing ? payrollRow(emp, month, recs, state.allowDraft, state.salDraft ? normalizeSalary(state.salDraft) : undefined) : payrollRow(emp, month, recs);
   const line = (label, value, cls = "") => `<li class="${cls}"><span>${label}</span><b>${won(value)}</b></li>`;
   const days = recs
     .map((rec) => {
@@ -2050,7 +2063,7 @@ function renderPaySheet(emp) {
           : `${line("소득세", r.income)}${line("지방소득세", r.local)}`
       }
     </ul>
-    <button type="button" class="m-allowance-add" data-action="open-payslip" data-id="${emp.id}"><span aria-hidden="true">＋</span> 수당 추가하기</button>
+    ${editing ? renderAllowInline(emp.id, month) : `<button type="button" class="m-allowance-add" data-action="open-payslip" data-id="${emp.id}"><span aria-hidden="true">＋</span> 수당 추가하기</button>`}
     <details class="m-work-days"><summary><span class="m-work-days-heading"><span>날짜별 근무</span><strong>${hrs(r.hours)}</strong></span><span class="m-work-chevron" aria-hidden="true">${DD_CHEVRON}</span></summary><ul class="m-days-list">${days || `<li><span>근무 기록이 없어요</span></li>`}</ul>
     <button type="button" class="btn-ghost m-share" data-action="share-ts-image" data-id="${emp.id}">공유하기</button></details>
 `;
@@ -2494,9 +2507,39 @@ function renderSalaryInputs(empId, month) {
     </div>`;
 }
 
+// 휴대폰 급여 상세: 수당(월급제는 월급·공제액까지)을 그 자리에서 입력
+function renderAllowInline(empId, month) {
+  return `
+    <div class="m-allow-inline">
+      ${state.salDraft ? renderSalaryInputs(empId, month) : ""}
+      ${renderAllowRows()}
+      <div class="action-row">
+        <button type="button" class="btn-ghost" data-action="close-payslip">취소</button>
+        <button type="button" class="btn-primary" data-action="save-payslip">저장</button>
+      </div>
+    </div>`;
+}
+
+function renderAllowRows() {
+  return `
+          <div class="ps-allow">
+            ${state.allowDraft
+              .map(
+                (a, i) => `
+              <div class="ps-allow-row">
+                <input class="field" value="${esc(a.name)}" placeholder="수당 이름" data-allow="name" data-index="${i}" aria-label="수당 이름" />
+                <input class="field ps-allow-amount money" type="text" inputmode="numeric" value="${a.amount ? Number(a.amount).toLocaleString() : ""}" placeholder="0" data-allow="amount" data-index="${i}" aria-label="${esc(a.name || "수당")} 금액" />
+                <button type="button" class="danger" data-action="remove-allowance" data-index="${i}" aria-label="삭제">삭제</button>
+              </div>`,
+              )
+              .join("")}
+            <button type="button" class="add-btn" data-action="add-allowance">+ 수당 추가</button>
+          </div>`;
+}
+
 function renderPayslipModal() {
   const empId = state.payslipId;
-  if (!empId) return "";
+  if (!empId || (!isDesktop() && route().name === "pay-detail")) return "";
   const { month } = state.payroll;
   const emp = employeeById(empId);
   // 명세서 창에서는 저장 전까지 수정 중인 수당(state.allowDraft)으로 미리 계산
@@ -3390,7 +3433,19 @@ function refreshSchedule() {
     }
   }
   const dayList = document.getElementById("sched-day-list");
-  if (dayList) dayList.innerHTML = renderDayShifts();
+  if (dayList) {
+    // 줄 자리에서 열린 수정 칸도 그대로 옮겨 붙인다
+    const form = dayList.querySelector("#m-slot-edit");
+    const focused = form?.contains(document.activeElement) ? document.activeElement : null;
+    const caret = focused && "selectionStart" in focused ? [focused.selectionStart, focused.selectionEnd] : null;
+    dayList.innerHTML = renderDayShifts();
+    const slot = dayList.querySelector("#m-slot-edit");
+    if (form && slot) {
+      slot.replaceWith(form);
+      focused?.focus({ preventScroll: true });
+      if (caret) focused.setSelectionRange(...caret);
+    }
+  }
   const status = document.getElementById("sched-status");
   if (status) status.innerHTML = renderSchedStatus();
 }
@@ -3928,7 +3983,7 @@ function render() {
 // 고르면 select 값을 바꾸고 change 를 내보내므로 저장 처리는 원래 코드 그대로다. 휴대폰은 기본 선택창을 쓴다.
 const DD_CHEVRON = svg(14, '<path d="m6 9 6 6 6-6"/>', 2.5);
 function enhanceSelects() {
-  const selector = isDesktop() ? "select.field" : ".m-screen-records select.m-tax, .m-payroll-month-select, .m-pay-employee-select";
+  const selector = isDesktop() ? "select.field" : ".m-screen-records select.m-tax, .m-payroll-month-select, .m-pay-employee-select, select#slot-emp";
   for (const sel of app.querySelectorAll(selector)) {
     const dd = document.createElement("div");
     dd.className = "dd";
