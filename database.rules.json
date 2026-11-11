@@ -38,6 +38,12 @@
           },
           "order": {
             ".validate": "newData.isString()"
+          },
+          "changeRequests": {
+            "$id": {
+              ".write": "root.child('stores/' + $sid + '/meta').exists() && newData.exists() && newData.child('status').val() === 'pending' && (!data.exists() || (data.child('status').val() !== 'pending' && data.child('status').val() !== 'processing'))",
+              ".validate": "$id.matches(/^[A-Za-z0-9_-]{1,80}$/) && newData.hasChildren(['employeeId', 'date', 'start', 'end', 'status']) && newData.child('employeeId').isString() && newData.child('date').isString() && newData.child('date').val().length === 10 && newData.child('start').isString() && newData.child('start').val().length === 5 && newData.child('end').isString() && newData.child('end').val().length === 5 && (newData.child('status').val() === 'pending' || newData.child('status').val() === 'processing' || newData.child('status').val() === 'approved' || newData.child('status').val() === 'rejected') && (!newData.child('reason').exists() || (newData.child('reason').isString() && newData.child('reason').val().length <= 300))"
+            }
           }
         },
         "private": {

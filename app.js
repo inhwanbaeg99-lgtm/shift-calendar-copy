@@ -301,11 +301,14 @@ function clockIn(employeeId, now = new Date()) {
   if (!emp || !emp.active) return "직원을 찾을 수 없습니다.";
   const date = todayDateString();
   if (recordFor(employeeId, date)?.clockIn) return "이미 출근 처리되었습니다.";
-  // 급여(clockIn · clockOut)는 찍은 시각을 10분 단위로 반올림한 값, 실제로 누른 시각은 punchIn · punchOut 에 그대로 남긴다.
-  // 퇴근을 찍기 전까지 clockOut 은 그날 근무 종료 시간이다 (퇴근을 못 찍으면 이 시간으로 계산된다).
-  // 근무 시간이 없는 대타는 출근 시각과 같게 둔다 (퇴근을 찍거나 관리자가 시간을 넣기 전까지 0시간)
-  const start = roundPunch(now);
+  // MGC 근무와 같은 방식: 출근만 찍고, 퇴근은 그날 근무 종료 시간으로 들어간다.
+  // 예정보다 일찍 누르면 예정 시작 시각, 늦게 누르면 10분 단위로 반올림한 시각 (반올림해도 예정 시작 전으로는 가지 않음).
+  // 시간이 다르면 직원은 수정 요청, 관리자는 직접 수정한다. 실제로 누른 시각은 punchedAt 에 남긴다.
+  // 이름만 넣은 대타는 정해진 종료 시간이 없어서 예전처럼 퇴근을 찍는다 (punchIn · punchOut)
   const noEnd = noTimeShift(emp, date);
+  const scheduled = kstIso(date, shiftFor(emp, date).start);
+  const rounded = roundPunch(now);
+  const start = noEnd ? rounded : (now <= new Date(scheduled) || rounded < scheduled ? roundIso(scheduled) : rounded);
   const end = noEnd ? start : roundIso(scheduledEnd(emp, date));
   store.records.push({
     manual: true,
@@ -314,8 +317,7 @@ function clockIn(employeeId, now = new Date()) {
     date,
     clockIn: start,
     clockOut: end > start ? end : start,
-    punchIn: now.toISOString(),
-    ...(noEnd ? { noEnd: true } : {}),
+    ...(noEnd ? { punchIn: now.toISOString(), noEnd: true } : { punchedAt: now.toISOString() }),
     createdAt: now.toISOString(),
   });
   save();
@@ -376,6 +378,74 @@ function setRecordTimes(empId, date, start, end) {
 
 function nameLabel(emp) {
   return esc(emp.name);
+}
+
+// ---------- 근무 수정 요청 (MGC 근무와 같게) ----------
+// 직원이 그날 근무 시간을 고쳐 달라고 요청하면 stores/{코드}/public/changeRequests/{직원id_날짜} 에 남는다.
+// 관리자가 승인하기 전까지 기록은 그대로다. 직원·날짜당 대기 중인 요청은 하나만.
+const REQ_TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
+function changeRequests() {
+  return Object.entries(remote?.pub?.changeRequests ?? {})
+    .filter(([id, r]) => /^[\w-]{1,80}$/.test(id) && r && typeof r === "object" && /^[\w-]{1,40}$/.test(r.employeeId ?? "") && /^\d{4}-\d{2}-\d{2}$/.test(r.date ?? "") && REQ_TIME.test(r.start ?? "") && REQ_TIME.test(r.end ?? "") && ["pending", "processing", "approved", "rejected"].includes(r.status))
+    .map(([id, r]) => ({ id, employeeId: r.employeeId, date: r.date, start: r.start, end: r.end, beforeStart: REQ_TIME.test(r.beforeStart ?? "") ? r.beforeStart : "", beforeEnd: REQ_TIME.test(r.beforeEnd ?? "") ? r.beforeEnd : "", reason: typeof r.reason === "string" ? r.reason.slice(0, 300) : "", status: r.status, createdAt: String(r.createdAt ?? "") }));
+}
+const pendingRequestsOn = (date) => changeRequests().filter((r) => r.date === date && ["pending", "processing"].includes(r.status)).sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1));
+const pendingRequestFor = (empId, date) => pendingRequestsOn(date).find((r) => r.employeeId === empId);
+
+// 관리자: 그날 대기 중인 수정 요청 (승인 · 반려)
+function renderChangeRequests(date) {
+  if (!ADMIN_SITE || !isAdmin()) return "";
+  const rows = pendingRequestsOn(date);
+  if (!rows.length) return "";
+  return `<section class="change-inbox" aria-label="근무 수정 요청"><h3>근무 수정 요청 <span>${rows.length}건</span></h3>${rows.map((r) => {
+    const emp = employeeById(r.employeeId);
+    const worked = hoursBetween(kstIso(r.date, r.start), endIso(r.date, r.start, r.end));
+    return `<article class="change-request"><div><b>${esc(emp?.name || "삭제된 직원")}</b><p class="request-time">${r.beforeStart ? `${esc(r.beforeStart)} ~ ${esc(r.beforeEnd)} → ` : ""}<strong class="request-new-time${emp ? diffClass(emp, r.date, worked) : ""}">${esc(r.start)} ~ ${esc(r.end)}</strong></p>${r.reason ? `<p class="request-reason">${esc(r.reason)}</p>` : ""}</div><div class="action-row"><button type="button" class="btn-ghost" data-action="reject-shift-change" data-id="${esc(r.id)}"${r.status === "processing" ? " disabled" : ""}>반려</button><button type="button" class="btn-primary" data-action="approve-shift-change" data-id="${esc(r.id)}"${!emp || r.status === "processing" ? " disabled" : ""}>${r.status === "processing" ? "처리 중" : "승인"}</button></div></article>`;
+  }).join("")}</section>`;
+}
+
+// 직원: 수정 요청 보내기 (같은 요청이 동시에 두 번 들어가지 않게 transaction)
+async function submitShiftChange(emp, date, start, end, reason) {
+  if (!cloud || !remote.pubLoaded || !storeId) { state.error = "온라인 연결 후 다시 요청해주세요."; render(); return; }
+  const rec = recordFor(emp.id, date);
+  const sh = shiftFor(emp, date);
+  const before = rec ? { start: formatTime(rec.clockIn), end: formatTime(rec.clockOut) } : { start: sh.start, end: sh.end };
+  try {
+    const result = await cloud.db.ref(storePath(`public/changeRequests/${emp.id}_${date}`)).transaction((old) => {
+      if (old && ["pending", "processing"].includes(old.status)) return;
+      return { employeeId: emp.id, date, start, end, beforeStart: before.start, beforeEnd: before.end, reason: reason.slice(0, 300), status: "pending", createdAt: new Date().toISOString() };
+    });
+    if (!result.committed) throw new Error("이미 승인 대기 중인 요청이 있어요.");
+    resetDayUi();
+    queueToast("수정 요청을 보냈어요. 승인 후 반영돼요.");
+    render();
+  } catch (err) {
+    state.error = err?.message || "요청을 보내지 못했어요.";
+    render();
+  }
+}
+
+// 관리자: 승인하면 그날 기록(오늘 · 지난 날짜) 또는 그날 근무 시간(앞으로의 날짜)에 반영, 반려하면 기록은 그대로
+async function reviewShiftChange(id, approve, button) {
+  if (!isAdmin() || !cloud) return;
+  if (!(await uiConfirm(approve ? "요청한 근무시간을 승인하고 급여에 반영할까요?" : "이 수정 요청을 반려할까요?", { ok: approve ? "승인" : "반려" }))) return;
+  button.disabled = true;
+  try {
+    const r = changeRequests().find((x) => x.id === id);
+    if (!r || r.status !== "pending") throw new Error("이미 처리된 요청이에요.");
+    if (approve) {
+      const emp = employeeById(r.employeeId);
+      if (!emp) throw new Error("직원을 찾을 수 없어요.");
+      if (r.date <= todayDateString()) setRecordTimes(emp.id, r.date, r.start, r.end);
+      else setShift(emp.id, r.date, r.start, r.end);
+      save();
+    }
+    await cloud.db.ref(storePath(`public/changeRequests/${id}`)).update({ status: approve ? "approved" : "rejected", reviewedAt: new Date().toISOString() });
+    showToast(approve ? "승인했어요. 근무시간과 급여에 반영됐어요." : "요청을 반려했어요.");
+  } catch (err) {
+    button.disabled = false;
+    uiAlert(err?.message || "처리하지 못했어요. 다시 시도해주세요.");
+  }
 }
 
 // 관리자가 대신 출근 처리: 그날 근무 시간(근무표 또는 그날 바꾼 시간) 그대로 기록한다
@@ -725,8 +795,9 @@ function weekdayRow() {
 
 // 날짜 박스: 그날 출근한 사람들
 // 모바일 관리자 날짜 상세: 직원 · 근무표 화면처럼 요약 카드 + 목록 카드
-const mobileDayPage = () => ADMIN_SITE && !isDesktop() && route().name === "day";
-const empSwatch = (emp) => `<span class="swatch big" style="background:${emp ? copyDisplayColor(emp.color) : "#dfe9f3"}"></span>`;
+const mobileAdminCal = () => ADMIN_SITE && !isDesktop() && ["calendar", "day"].includes(route().name);
+const mobileDayPage = mobileAdminCal;
+const calDay = () => state.calDay ?? todayDateString();
 
 function renderDateBox(date, { closable }) {
   const [, m, d] = date.split("-").map(Number);
@@ -741,7 +812,7 @@ function renderDateBox(date, { closable }) {
       (r) => `
         <li class="in-item${r.id === state.justAddedId ? " new" : ""}">
           <${ADMIN_SITE ? `button type="button" data-action="toggle-rec" data-id="${r.employeeId}"` : "div"} class="in-row">
-            ${mobile ? empSwatch(employeeById(r.employeeId)) : ""}<span class="in-name">${nameLabel(employeeById(r.employeeId), r)}</span>
+            <span class="in-name">${nameLabel(employeeById(r.employeeId), r)}</span>
             ${needsCheck(r) ? `<span class="in-time under">${formatTime(r.clockIn)} ~ 퇴근 확인 필요</span>` : noEndOpen(r) ? `<span class="in-time">${formatTime(r.clockIn)} ~ -</span>` : `<span class="in-time${diffClass(employeeById(r.employeeId), date, hoursBetween(r.clockIn, r.clockOut))}">${formatTime(r.clockIn)} ~ ${formatTime(r.clockOut)}</span>`}
           </${ADMIN_SITE ? "button" : "div"}>
           ${ADMIN_SITE && state.expandedRecId === r.employeeId ? `<div class="in-action">${renderRecordActions(r)}</div>` : ""}
@@ -751,14 +822,13 @@ function renderDateBox(date, { closable }) {
 
   if (mobile) return `
     <section class="date-box m-date" aria-label="${m}월 ${d}일 출근 기록">
+      ${renderChangeRequests(date)}
       <div class="m-hero m-date-hero">
-        <small>${m}월 ${d}일 ${WEEKDAYS[wd]}요일${holiday ? ` · ${esc(holiday)}` : ""}</small>
-        <strong>${records.length ? `출근 ${records.length}명` : "아직 출근 전"}</strong>
-        <div class="m-hero-meta"><span>근무 예정 ${scheduledOn(date).length}명${records.length ? " · 이름을 눌러 시간을 고쳐요" : ""}</span></div>
+        <span class="m-date-num${isRest ? " rest" : ""}">${d}</span>
+        <span class="m-date-wd${isRest ? " rest" : ""}">${WEEKDAYS[wd]}요일${holiday ? ` · ${esc(holiday)}` : ""}</span>
+        <ul class="in-list m-in-boxes">${rows || `<li class="in-empty">${date > todayDateString() ? "아직 오지 않은 날이에요" : "아직 출근한 사람이 없어요"}</li>`}</ul>
       </div>
-      ${records.length ? `<h2 class="m-day-heading">출근 기록</h2><ul class="in-list m-list">${rows}</ul>` : ""}
-    </section>`;
-  return `
+    </section>`;  return `
     <section class="date-box" aria-label="${m}월 ${d}일 출근 기록">
       <div class="date-box-head">
         <div>
@@ -768,6 +838,7 @@ function renderDateBox(date, { closable }) {
         ${closable ? `<button type="button" class="close-btn" data-action="close-panel" aria-label="닫기">${ICON_CLOSE}</button>` : ""}
       </div>
       <p class="box-label">출근 ${records.length}명${ADMIN_SITE && records.length ? " · 이름을 눌러 시간을 고쳐요" : ""}</p>
+      ${renderChangeRequests(date)}
       <ul class="in-list">
         ${rows || `<li class="in-empty">아직 출근한 사람이 없어요</li>`}
       </ul>
@@ -795,11 +866,14 @@ function renderStaffItem(emp, date) {
   const done = Boolean(rec?.clockIn);
   // 직원 화면: 오늘 찍을 게 남아 있을 때만 이름을 누를 수 있다 (시간 수정은 관리자만)
   // 관리자 화면: 출근 기록이 없을 때만 (기록이 있으면 위쪽 출근 기록에서 고친다)
-  const editable = ADMIN_SITE ? !done : isToday && (!done || punchOpen(rec));
+  // 직원: 오늘 · 지난 날짜는 이름을 눌러 출근 또는 수정 요청 (MGC 근무와 같게)
+  const pending = pendingRequestFor(emp.id, date);
+  const editable = ADMIN_SITE ? !done : date <= today;
   // 이름 밑에는 항상 근무표 시간. 관리자가 고치는 칸에는 기록이 있으면 기록된 시간을 넣는다
   const shift = shiftFor(emp, date);
-  const start = shift.start;
-  const end = noTimeShift(emp, date) ? "" : shift.end;
+  // 직원 수정 요청 칸에는 기록이 있으면 기록된 시간을 넣는다
+  const start = !ADMIN_SITE && rec ? formatTime(rec.clockIn) : shift.start;
+  const end = !ADMIN_SITE && rec ? formatTime(rec.clockOut) : noTimeShift(emp, date) ? "" : shift.end;
   const expanded = editable && state.expandedId === emp.id;
 
   let action = "";
@@ -811,6 +885,7 @@ function renderStaffItem(emp, date) {
         ${ADMIN_SITE && date > today ? `<button type="button" class="btn-ghost" data-action="edit-shift" data-id="${emp.id}">수정</button>` : ""}
         ${!ADMIN_SITE && isToday && !done ? `<button type="button" class="btn-primary" data-action="clock-in" data-id="${emp.id}">출근</button>` : ""}
         ${!ADMIN_SITE && isToday && punchOpen(rec) ? `<button type="button" class="btn-primary" data-action="clock-out" data-id="${emp.id}">퇴근</button>` : ""}
+        ${!ADMIN_SITE && !pending ? `<button type="button" class="btn-ghost" data-action="edit-shift" data-id="${emp.id}">수정 요청</button>` : ""}
         ${ADMIN_SITE && !done && date <= today ? (noTimeShift(emp, date) ? `<button type="button" class="btn-primary" data-action="edit-shift" data-id="${emp.id}">출근 처리</button>` : `<button type="button" class="btn-primary" data-action="admin-clock-in" data-id="${emp.id}">출근 처리</button>`) : ""}
       </div>`;
   }
@@ -819,8 +894,8 @@ function renderStaffItem(emp, date) {
   return `
     <li class="staff-item${expanded ? " expanded" : ""}">
       <button type="button" class="staff-name-btn" data-action="toggle-staff" data-id="${emp.id}"${editable ? "" : " disabled"}>
-        ${mobileDayPage() ? empSwatch(emp) : ""}<span class="staff-name">${nameLabel(emp, rec)}</span>
-        ${needsCheck(rec) ? `<span class="badge check">퇴근 확인 필요</span>` : rec?.punchOut ? `<span class="badge done${rec.id === state.justAddedId ? " just" : ""}">퇴근 완료</span>` : done ? `<span class="badge done${rec.id === state.justAddedId ? " just" : ""}">출근 완료</span>` : ADMIN_SITE && date < today ? `<span class="badge none">기록 없음</span>` : ""}
+        <span class="staff-name">${nameLabel(emp, rec)}</span>
+        ${pending ? `<span class="badge req">수정 요청 중</span>` : needsCheck(rec) ? `<span class="badge check">퇴근 확인 필요</span>` : done ? `<span class="badge done${rec.id === state.justAddedId ? " just" : ""}">출근 완료</span>` : ""}
         <span class="staff-time">${shiftLabel(emp, date)}</span>
       </button>
       ${action ? `<div class="staff-action${state.expandEnter ? " enter" : ""}">${action}</div>` : ""}
@@ -830,14 +905,16 @@ function renderStaffItem(emp, date) {
 // 시간 수정 칸 (근무자 목록·날짜 박스 공용). 비워 두면 기존 시간 유지.
 function renderTimeEditor(empId, start, end) {
   return `
+    ${ADMIN_SITE ? "" : `<p class="edit-note">고칠 시간을 넣고 <b>요청</b>을 누르면 관리자가 확인한 뒤 반영돼요.</p>`}
     <div class="edit-row">
       ${timeInput("edit-start", start, "시작 시간")}
       <span>~</span>
       ${timeInput("edit-end", end, "종료 시간")}
     </div>
+    ${ADMIN_SITE ? "" : `<input id="change-reason" class="field change-reason" maxlength="100" placeholder="사유 (선택)" autocomplete="off" aria-label="수정 요청 사유" />`}
     <div class="action-row">
       <button type="button" class="btn-ghost" data-action="cancel-edit">취소</button>
-      <button type="button" class="btn-primary" data-action="save-shift" data-id="${empId}">저장</button>
+      <button type="button" class="btn-primary" data-action="save-shift" data-id="${empId}">${ADMIN_SITE ? "저장" : "요청"}</button>
     </div>
     ${state.error ? `<p class="error">${esc(state.error)}</p>` : ""}`;
 }
@@ -925,11 +1002,190 @@ function renderHome() {
 function renderAdminCalendar() {
   if (isDesktop()) return renderAdminShell("calendar", `<div class="admin-cal">${renderCalendarCard()}</div>`, { center: true, wide: true });
   if (state.yearView) return renderAdminShell("calendar", renderYearView());
-  return renderAdminShell("calendar", `
-    <div class="admin-cal month-picker-calendar"><div class="card"><div class="cal-wrap">
-      <div class="grid m-weekdays" aria-hidden="true">${weekdayRow()}</div>
-      <div class="month-scroll" data-active="${state.year}-${String(state.month).padStart(2, "0")}">${renderWeekStream()}</div>
-    </div></div></div>`);
+  return renderAdminShell("calendar", renderKc());
+}
+
+// ---------- 모바일 관리자 출·퇴근: 주간 줄 (펼치면 위아래로 이어지는 월 달력) + 고른 날 상세 ----------
+const KC_ROW = 56; // 주간 줄 한 줄 높이
+let kcStreamStart = ""; // 월 달력 맨 위 줄 일요일
+function kcDay(d, cls = "") {
+  const i = weekdayOf(d), recs = recordsOn(d);
+  const warn = recs.some(needsCheck) || (isAdmin() && pendingRequestsOn(d).length > 0);
+  return `<button type="button" class="kc-day${i === 0 ? " sun" : i === 6 ? " sat" : ""}${d === todayDateString() ? " today" : ""}${d === calDay() ? " on" : ""}${cls}" data-date="${d}" aria-label="${Number(d.slice(5, 7))}월 ${Number(d.slice(8))}일"><span class="kc-num">${Number(d.slice(8))}</span><span class="kc-mark${warn ? " warn" : recs.length ? " ok" : ""}"></span></button>`;
+}
+function kcWeek(offset) {
+  const sun = addDays(calDay(), offset * 7 - weekdayOf(calDay()));
+  return `<div class="kc-page"><div class="kc-row">${Array.from({ length: 7 }, (_, i) => {
+    const d = addDays(sun, i);
+    return kcDay(d, d.slice(0, 7) !== calDay().slice(0, 7) ? " other" : "");
+  }).join("")}</div></div>`;
+}
+function kcStream(months) {
+  const ym = state.activeYm;
+  const [y, m] = ym.split("-").map(Number);
+  const first = ymd(new Date(y, m - 1 - months, 1));
+  kcStreamStart = addDays(first, -weekdayOf(first));
+  const end = ymd(new Date(y, m + months, 0));
+  let html = "";
+  for (let sun = kcStreamStart; sun <= end; sun = addDays(sun, 7)) {
+    const firstWeek = Number(addDays(sun, 6).slice(8)) <= 7; // 매달 1일이 든 주에서 멈춤
+    html += `<div class="kc-wk${firstWeek ? " month-start" : ""}">${Array.from({ length: 7 }, (_, i) => {
+      const d = addDays(sun, i);
+      return kcDay(d, d.slice(0, 7) !== ym ? " dim" : "");
+    }).join("")}</div>`;
+  }
+  return `<div class="kc-stream" id="kcStream"><div class="kc-rows" id="kcRows">${html}</div></div>`;
+}
+const kcRowOf = (d) => Math.round((new Date(`${d}T12:00:00`) - new Date(`${kcStreamStart}T12:00:00`)) / 864e5 / 7);
+function renderKc() {
+  const open = Boolean(state.monthOpen);
+  const enter = state.calEnter;
+  state.calEnter = false;
+  return `
+    <div class="kc${open ? " open" : ""}">
+      <section class="kc-cal" aria-label="날짜 고르기">
+        <div class="kc-wd" aria-hidden="true">${WEEKDAYS.map((w, i) => `<span${i === 0 ? ' class="sun"' : ""}>${w}</span>`).join("")}</div>
+        <div class="kc-vp" id="kcVp">${open ? kcStream(state.streamMonths ?? 6) : `<div class="kc-scroller" id="kcScroller">${[-1, 0, 1].map(kcWeek).join("")}</div>`}</div>
+        <button type="button" class="kc-grip" data-action="toggle-month" aria-label="${open ? "주간으로 접기" : "월 달력 펼치기"}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+      </section>
+      ${open ? "" : `<div class="kc-content${enter ? ` enter ${calDay() > todayDateString() ? "from-left" : calDay() < todayDateString() ? "from-right" : "fade"}` : ""}">${renderDayArea(calDay(), { closable: false })}</div>`}
+    </div>`;
+}
+// 상단: 주간이면 < 11월 (누르면 월 달력), 월 달력이면 < 2026년 · 11월 (누르면 연도별 달력)
+function kcHeader() {
+  const ym = state.monthOpen ? state.activeYm : calDay().slice(0, 7);
+  const [y, m] = ym.split("-").map(Number);
+  // 달이 바뀌었을 때만 월 글자가 옆에서 들어온다 (뒤의 달이면 왼쪽에서, 앞의 달이면 오른쪽에서)
+  const prev = state.kcHeaderYm;
+  state.kcHeaderYm = ym;
+  const slide = prev && prev !== ym ? (ym > prev ? " from-left" : " from-right") : "";
+  return `<button type="button" class="m-cal-back" data-action="${state.monthOpen ? "open-year" : "toggle-month"}" aria-label="${state.monthOpen ? "연도별 달력 보기" : "월 달력 펼치기"}">${ICON_PREV}${state.monthOpen ? `<span class="kc-y">${y}년 · </span>` : ""}<span class="kc-m${slide}">${m}월</span></button>`;
+}
+// 월 달력을 넘기는 중: 연도가 같으면 연도는 그대로 두고 월만 바꿈
+function kcSetHeader(ym) {
+  const [y, m] = ym.split("-").map(Number);
+  const year = app.querySelector(".m-cal-back .kc-y"), month = app.querySelector(".m-cal-back .kc-m");
+  if (!month) return;
+  const prev = state.kcHeaderYm;
+  state.kcHeaderYm = ym;
+  if (year && !year.textContent.startsWith(`${y}년`)) year.textContent = `${y}년 · `;
+  month.textContent = `${m}월`;
+  month.classList.remove("from-left", "from-right");
+  void month.offsetWidth;
+  month.classList.add(prev && ym < prev ? "from-right" : "from-left");
+}
+// 월 달력 한 줄 높이: 6줄이 하단 메뉴 위까지 꽉 차게
+function kcRowH(vp) {
+  const menu = app.querySelector(".m-text-nav")?.getBoundingClientRect().top ?? window.innerHeight - 70;
+  return Math.max(KC_ROW, Math.floor((menu - vp.getBoundingClientRect().top - 34 - 12) / 6));
+}
+// 그린 뒤: 주간 줄은 가운데 주로, 월 달력은 보고 있는 달 첫 주가 맨 위로
+function setupKc() {
+  const vp = app.querySelector("#kcVp");
+  if (!vp) return;
+  if (!state.monthOpen) {
+    vp.style.height = `${KC_ROW}px`;
+    const sc = app.querySelector("#kcScroller");
+    sc.scrollLeft = sc.clientWidth;
+    let timer = null;
+    sc.addEventListener("scroll", () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        if (!sc.isConnected || !sc.clientWidth || state.kcResizing) return;
+        const idx = Math.round(sc.scrollLeft / sc.clientWidth);
+        if (idx === 1) return;
+        // 옆으로 넘기면 같은 요일의 지난주 · 다음 주
+        state.calDay = addDays(calDay(), (idx - 1) * 7);
+        resetDayUi();
+        state.calEnter = true;
+        render();
+      }, 140);
+    }, { passive: true });
+    return;
+  }
+  const rows = app.querySelector("#kcRows"), st = app.querySelector("#kcStream");
+  const h = kcRowH(vp);
+  rows.style.setProperty("--kc-row", `${h}px`);
+  vp.style.height = `${6 * h}px`;
+  st.scrollTop = kcRowOf(`${state.activeYm}-01`) * h;
+  if (!state.kcAnimating) st.classList.add("ready");
+  let timer = null;
+  st.addEventListener("scroll", () => {
+    if (state.kcAnimating) return;
+    // 맨 위 줄 토요일이 속한 달 = 지금 보는 달 → 그 달만 진하게, 상단 연월도 바로
+    const sat = rows.children[Math.round(st.scrollTop / h)]?.children[6];
+    const ym = sat?.dataset.date.slice(0, 7);
+    if (ym && ym !== state.activeYm) {
+      state.activeYm = ym;
+      rows.querySelectorAll(".kc-day").forEach((b) => b.classList.toggle("dim", !b.dataset.date.startsWith(ym)));
+      kcSetHeader(ym);
+    }
+    // 끝에 가까워지면 지금 달을 가운데로 다시 그린다
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      if (!st.isConnected) return;
+      const left = st.scrollHeight - st.scrollTop - st.clientHeight;
+      if (st.scrollTop < st.clientHeight * 2 || left < st.clientHeight * 2) render();
+    }, 400);
+  }, { passive: true });
+}
+// 보이는 줄만 옮겨서 끊김 없이 (나머지 줄은 화면 밖)
+function kcMove(list, done) {
+  const vp = app.querySelector("#kcVp");
+  list.forEach(({ el, from }) => { el.style.transform = from ? `translateY(${from}px)` : ""; });
+  void vp.offsetHeight;
+  vp.classList.remove("no-anim");
+  list.forEach(({ el, to }) => { el.classList.add("move"); el.style.transform = to ? `translateY(${to}px)` : "none"; });
+  setTimeout(done, 440);
+}
+// 펼치기: 고른 주는 제자리에 있다가 위아래 주가 열리며 이어진 월 달력이 화면을 채움
+function kcOpen() {
+  if (state.kcAnimating) return;
+  window.scrollTo({ top: 0 });
+  const sel = calDay();
+  Object.assign(state, { monthOpen: true, activeYm: sel.slice(0, 7), streamMonths: 1, kcAnimating: true });
+  resetDayUi();
+  render();
+  const vp = app.querySelector("#kcVp"), rows = app.querySelector("#kcRows");
+  if (!vp || !rows || reducedMotion()) {
+    Object.assign(state, { kcAnimating: false, streamMonths: 6 });
+    render();
+    return;
+  }
+  const h = parseFloat(rows.style.getPropertyValue("--kc-row"));
+  const s = kcRowOf(sel), ms = kcRowOf(`${state.activeYm}-01`);
+  const list = [];
+  for (let i = ms; i <= ms + 6; i++) if (rows.children[i]) list.push({ el: rows.children[i], from: (i - s) * KC_ROW - (i - ms) * h, to: 0 });
+  vp.classList.add("no-anim");
+  vp.style.height = `${KC_ROW}px`;
+  void vp.offsetHeight;
+  vp.classList.remove("no-anim");
+  vp.style.height = `${6 * h}px`;
+  kcMove(list, () => {
+    Object.assign(state, { kcAnimating: false, streamMonths: 6 });
+    render();
+  });
+}
+// 접기 (날짜를 누르거나 손잡이): 고른 날짜의 주 한 줄로 줄어들고 아래 상세가 다시 나타남
+function kcClose() {
+  if (state.kcAnimating) return;
+  const vp = app.querySelector("#kcVp"), rows = app.querySelector("#kcRows"), st = app.querySelector("#kcStream");
+  const finish = () => {
+    Object.assign(state, { kcAnimating: false, monthOpen: false, calEnter: true });
+    resetDayUi();
+    render();
+  };
+  if (!vp || !rows || !st || reducedMotion()) return finish();
+  state.kcAnimating = true;
+  const h = parseFloat(rows.style.getPropertyValue("--kc-row"));
+  const top = st.scrollTop, s = kcRowOf(calDay());
+  st.classList.remove("ready");
+  st.scrollTop = top;
+  const first = Math.floor(top / h);
+  const list = [];
+  for (let i = first; i <= first + 7; i++) if (rows.children[i]) list.push({ el: rows.children[i], from: 0, to: (i - s) * KC_ROW - (i * h - top) });
+  vp.style.height = `${KC_ROW}px`;
+  kcMove(list, finish);
 }
 
 // 모바일 달력: 앞뒤 1년 반의 주를 끊김 없이 한 줄로. 보고 있는 달만 진하고 나머지 날짜는 흐리다
@@ -1069,6 +1325,10 @@ function setupWeekScroll() {
 }
 
 function renderDayPage(date) {
+  if (ADMIN_SITE && !isDesktop()) {
+    if (state.calRoute !== date) Object.assign(state, { calRoute: date, calDay: date, monthOpen: false });
+    return renderAdminShell("calendar", renderKc());
+  }
   const page = `
     <div class="day-page" data-detail-date="${date}">
       <div class="day-page-inner">
@@ -1232,17 +1492,21 @@ function mobilePayEmployeeSelect(id) {
   return `<select class="field m-pay-employee-select" data-pay-employee="true" aria-label="급여 직원 선택">${store.employees.map(e=>`<option value="${esc(e.id)}"${e.id===id ? " selected" : ""}>${esc(e.name)}</option>`).join("")}</select>`;
 }
 
+// 하단 메뉴 순서 (왼쪽부터)
+const M_TABS = ["employees", "schedule", "calendar", "records"];
+const M_TAB_LABELS = { employees: "직원", schedule: "스케줄", calendar: "출·퇴근", records: "급여" };
+
 function renderMobileShell(active, content) {
   const tab = (key, label, i) =>
     `<a href="#/${key}" class="m-tab${active === key ? " active" : ""}"${active === key ? ' aria-current="page"' : ""} aria-label="${label}"><span>${label}</span></a>`;
-  const navIndex = Math.max(0, ["calendar","schedule","employees","records"].indexOf(active));
+  const navIndex = Math.max(0, M_TABS.indexOf(active));
   const accountIcon = '<svg class="m-account-symbol" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-4 0-8 2-8 5v2h16v-2c0-3-4-5-8-5z"/></svg>';
   const logoutIcon = '<svg class="m-exit-symbol" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>';
   return `
-    <header class="m-top${["calendar","records"].includes(route().name) ? " m-calendar-top" : ["day","pay-detail"].includes(route().name) ? ` m-day-top${route().name === "pay-detail" ? " m-pay-detail-top" : ""}` : ""}">
-      ${route().name === "calendar" ? state.yearView ? `<div class="m-cal-heading"></div>` : `<div class="m-cal-heading"><button type="button" class="m-year-back" data-action="open-year" aria-label="연도별 달력 보기">${ICON_PREV}<span>${state.year}년</span></button><p class="m-month-title">${state.month}월</p></div>` : ""}
+    <header class="m-top${["calendar","records"].includes(route().name) || mobileAdminCal() ? " m-calendar-top" : ["day","pay-detail"].includes(route().name) ? ` m-day-top${route().name === "pay-detail" ? " m-pay-detail-top" : ""}` : ""}">
+      ${mobileAdminCal() ? (state.yearView && route().name === "calendar" ? `<div class="m-cal-heading"></div>` : kcHeader()) : ""}
       ${route().name === "records" ? mobilePayrollMonthSelect() : ""}
-      ${route().name === "day" ? `<button type="button" class="m-day-back m-back-label" data-action="go-home" aria-label="달력으로 돌아가기">${ICON_PREV}<span>${Number(route().date.slice(5, 7))}월</span></button>` : ""}
+      ${route().name === "day" && !mobileAdminCal() ? `<button type="button" class="m-day-back m-back-label" data-action="go-home" aria-label="달력으로 돌아가기">${ICON_PREV}<span>${Number(route().date.slice(5, 7))}월</span></button>` : ""}
       ${route().name === "pay-detail" ? `<a class="m-day-back" href="#/records" aria-label="급여 목록으로 돌아가기">${ICON_PREV}</a>` : ""}
       ${route().name === "pay-detail" ? `<div class="m-pay-header-person">${mobilePayEmployeeSelect(route().id)}</div>` : `${{ employees: "직원", schedule: "근무표" }[route().name] ? `<h1 class="m-page-title">${{ employees: "직원", schedule: "근무표" }[route().name]}</h1>` : `<span class="m-store" aria-hidden="true"></span>`}<button type="button" class="m-tour" data-action="start-tour" aria-label="도움말" title="도움말">?</button>`}
       ${route().name === "pay-detail" ? `<button type="button" class="m-pay-download" data-action="payslip-pdf-one" data-id="${esc(route().id)}" aria-label="명세서 PDF 다운로드" title="명세서 PDF 다운로드"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 16v4h16v-4"/></svg></button>` : demoLoaded ? `<a class="m-login" href="#/login" aria-label="로그인" title="로그인">${accountIcon}</a>` : `<a class="m-login" href="#/mypage" aria-label="마이페이지" title="마이페이지">${accountIcon}</a>`}
@@ -1254,7 +1518,7 @@ function renderMobileShell(active, content) {
     <nav class="m-tabbar m-text-nav" style="--nav-position:${navIndex}" aria-label="관리자 메뉴">
       <div class="m-text-links">
         <span class="m-text-pill" aria-hidden="true"></span>
-        ${tab("calendar", "출·퇴근", 0)}${tab("schedule", "스케줄", 1)}${tab("employees", "직원", 2)}${tab("records", "급여", 3)}
+        ${M_TABS.map((key, i) => tab(key, M_TAB_LABELS[key], i)).join("")}
       </div>
     </nav>
     ${renderSheet()}
@@ -3102,9 +3366,13 @@ const TOURS = {
           { scene: "schedShare", sel: ".share-box", title: "근무표 사진", text: "이런 사진이 만들어져요. <b>카카오톡 전송하기</b>로 단톡방에 보내요." },
         ],
   calendar: (pc) => [
-    ...(pc ? [] : [{ sel: ".m-today", title: "오늘 근무자", text: "오늘 일할 사람과 출근했는지가 보여요. 누르면 오늘 화면으로 가요." }]),
-    { sel: pc ? ".cal-head" : ".m-cal-heading", title: "달 바꾸기", text: pc ? "화살표로 지난달, 다음 달을 봐요." : "달력을 위아래로 넘기면 한 달씩 바뀌어요. 위의 <b>&lt; 연도</b>를 누르면 한 해 열두 달이 작게 보이고, 달을 누르면 그 달로 가요. 날짜를 누르면 그날의 상세 화면이 열려요." },
-    { sel: [".cell:has(.day-num.today)", ".grid .cell"], title: "날짜 칸", text: "그날 출근 기록이 이름과 시간으로 보여요. 근무표보다 <b style=\"color:var(--more)\">더 일하면 파랑</b>, <b style=\"color:var(--red)\">덜 일하면 빨강</b>이에요. 날짜를 누르면 그날이 열려요." },
+    ...(pc ? [
+      { sel: ".cal-head", title: "달 바꾸기", text: "화살표로 지난달, 다음 달을 봐요." },
+      { sel: [".cell:has(.day-num.today)", ".grid .cell"], title: "날짜 칸", text: "그날 출근 기록이 이름과 시간으로 보여요. 근무표보다 <b style=\"color:var(--more)\">더 일하면 파랑</b>, <b style=\"color:var(--red)\">덜 일하면 빨강</b>이에요. 날짜를 누르면 그날이 열려요." },
+    ] : [
+      { sel: ".kc-cal", title: "날짜 고르기", text: "날짜를 누르면 아래에 그날 출근 기록과 근무자가 나와요. 옆으로 밀면 지난주 · 다음 주예요. <b style=\"color:#59B5FF\">파란 점</b>은 기록이 있는 날, <b style=\"color:var(--red)\">분홍 점</b>은 수정 요청처럼 확인할 게 있는 날이에요." },
+      { sel: ".m-cal-back", title: "달 전체 보기", text: "위의 <b>&lt; 월</b>이나 아래 화살표를 누르면 달 전체가 펼쳐져요. 위아래로 넘기면 한 달씩, 날짜를 누르면 그날로 돌아와요. 펼친 상태에서 <b>&lt; 연도</b>를 누르면 한 해 열두 달이 작게 보여요." },
+    ]),
     { scene: "day", sel: ".date-box", title: "그날 출근 기록", text: "날짜를 누르면 이렇게 열려요. 여기 보이는 출퇴근 시간이 급여에 들어가요. 찍은 시각을 <b>10분 단위로 반올림</b>한 시간이에요(13:52 → 13:50, 13:55 → 14:00)." },
     { scene: "day", sel: ".staff", title: "근무 예정", text: "그날 근무표에 있는 사람이에요. 이름 밑 시간은 <b>근무표 시간</b>이라 출퇴근 기록을 고쳐도 바뀌지 않아요." },
     { scene: "staff", sel: ".staff-item.expanded", title: "출근 처리", text: "출근 기록이 없는 사람은 이름을 눌러 <b>출근 처리</b>해요. 근무표 시간대로 위쪽 출근 기록에 들어가요. 앞으로의 날짜는 여기서 <b>수정</b>으로 그날만 근무 시간을 바꿔요." },
@@ -3412,7 +3680,7 @@ function route() {
 const homeHash = () => (ADMIN_SITE ? "#/calendar" : "#/");
 
 // 다시 그릴 때 입력 중이던 시간 칸 값을 지키는 칸들 (편집이 끝나면 칸이 사라지므로 그대로 남지 않는다)
-const KEEP_FIELDS = ["edit-start", "edit-end", "extra-name", "extra-start", "extra-end"];
+const KEEP_FIELDS = ["edit-start", "edit-end", "extra-name", "extra-start", "extra-end", "change-reason"];
 
 let calendarFitFrame = 0;
 let calendarFitObserver = null;
@@ -3448,6 +3716,15 @@ function observeMobileCalendarLayout() {
   app.querySelectorAll(".m-top, .m-text-nav, .m-install").forEach(el => calendarFitObserver.observe(el));
 }
 window.addEventListener("resize", fitMobileAttendanceCalendar);
+// 화면 크기가 바뀌어도(회전 · 주소창) 주간 줄은 고른 주를 가운데에
+window.addEventListener("resize", () => {
+  const sc = app.querySelector("#kcScroller");
+  if (!sc) return;
+  state.kcResizing = true;
+  sc.scrollLeft = sc.clientWidth;
+  clearTimeout(state.kcResizeTimer);
+  state.kcResizeTimer = setTimeout(() => { sc.scrollLeft = sc.clientWidth; state.kcResizing = false; }, 250);
+});
 window.addEventListener("orientationchange", fitMobileAttendanceCalendar);
 window.addEventListener("pageshow", fitMobileAttendanceCalendar);
 window.visualViewport?.addEventListener("resize", fitMobileAttendanceCalendar);
@@ -3458,7 +3735,7 @@ function render() {
   const kept = KEEP_FIELDS.map((id) => [id, document.getElementById(id)?.value]).filter(([, v]) => v);
   const focusedId = document.activeElement?.id;
   const r = route();
-  document.documentElement.classList.toggle("attendance-viewport", !isDesktop() && r.name === "calendar");
+  document.documentElement.classList.toggle("attendance-viewport", !isDesktop() && r.name === "calendar" && (!ADMIN_SITE || Boolean(state.yearView)));
   if (r.name === "lock") app.innerHTML = renderLock();
   else if (r.name === "pick") app.innerHTML = renderPick();
   else if (r.name === "day") app.innerHTML = renderDayPage(r.date);
@@ -3483,6 +3760,7 @@ function render() {
   enhanceSelects();
   setupMonthScroll();
   setupWeekScroll();
+  setupKc();
   observeMobileCalendarLayout();
   fitMobileAttendanceCalendar();
   placeNavPill();
@@ -3735,8 +4013,9 @@ function pickMonthFromYear(el) {
   [state.year, state.month] = el.dataset.ym.split("-").map(Number);
   state.yearView = false;
   state.monthDir = null;
+  if (ADMIN_SITE) Object.assign(state, { monthOpen: true, activeYm: `${state.year}-${String(state.month).padStart(2, "0")}`, streamMonths: 6 });
   render();
-  const pager = app.querySelector(".month-scroll");
+  const pager = app.querySelector("#kcVp") || app.querySelector(".month-scroll");
   if (!pager || reducedMotion()) return;
   const p = pager.getBoundingClientRect();
   pager.style.transformOrigin = "0 0";
@@ -3748,7 +4027,7 @@ function pickMonthFromYear(el) {
 
 let pendingTabShift = 0;
 function navigateMobileTab(hash) {
-  const order = ["calendar","schedule","employees","records"];
+  const order = M_TABS;
   const previous = app.querySelector(".m-text-nav .m-tab.active")?.getAttribute("href");
   const from = order.indexOf((previous || "").replace("#/",""));
   const to = order.indexOf(hash.replace("#/",""));
@@ -3966,6 +4245,7 @@ async function pickStore() {
 
 function activeDate() {
   const r = route();
+  if (mobileAdminCal()) return calDay();
   return r.name === "day" ? r.date : state.selectedDate;
 }
 
@@ -3981,6 +4261,18 @@ function resetDayUi() {
 function selectDate(date) {
   resetDayUi();
   state.dayEnter = true;
+  if (ADMIN_SITE && !isDesktop() && mobileAdminCal()) {
+    state.calDay = date;
+    if (state.monthOpen) {
+      // 월 달력: 고른 표시를 옮긴 뒤 그 주로 접힘
+      app.querySelectorAll("#kcRows .kc-day").forEach((b) => b.classList.toggle("on", b.dataset.date === date));
+      setTimeout(kcClose, 120);
+      return;
+    }
+    state.calEnter = true;
+    render();
+    return;
+  }
   if (!isDesktop()) {
     state.year = Number(date.slice(0, 4));
     state.month = Number(date.slice(5, 7));
@@ -4115,7 +4407,12 @@ app.addEventListener("click", (e) => {
     case "next-month":
       moveMonth(action === "prev-month" ? -1 : 1);
       break;
+    case "toggle-month":
+      if (state.monthOpen) kcClose();
+      else kcOpen();
+      return;
     case "open-year":
+      [state.year, state.month] = (state.activeYm ?? calDay().slice(0, 7)).split("-").map(Number);
       openYearView();
       return;
     case "pick-month":
@@ -4157,7 +4454,6 @@ app.addEventListener("click", (e) => {
       state.expandedRecId = state.expandedRecId === id ? null : id;
       break;
     case "edit-shift":
-      if (!ADMIN_SITE) return;
       state.error = "";
       state.editingId = id;
       state.editingWhere = el.dataset.where ?? "staff";
@@ -4167,8 +4463,11 @@ app.addEventListener("click", (e) => {
       state.editingId = null;
       state.editingWhere = null;
       break;
+    case "approve-shift-change":
+    case "reject-shift-change":
+      reviewShiftChange(id, action === "approve-shift-change", el);
+      return;
     case "save-shift": {
-      if (!ADMIN_SITE) return;
       const start = readTime("edit-start");
       const end = readTime("edit-end");
       if (!start || !end) {
@@ -4181,6 +4480,11 @@ app.addEventListener("click", (e) => {
       }
       const date = activeDate();
       const emp = employeeById(id);
+      // 직원: 바로 고치지 않고 관리자에게 수정 요청
+      if (!ADMIN_SITE) {
+        submitShiftChange(emp, date, start, end, document.getElementById("change-reason")?.value.trim() || "");
+        return;
+      }
       // 오늘 · 지난 날짜는 근무 기록만 고친다 (기록이 없으면 새로 넣는다). 근무표 시간은 그대로
       if (date <= todayDateString()) {
         setRecordTimes(id, date, start, end);
@@ -4571,12 +4875,21 @@ app.addEventListener(
     const dx = e.changedTouches[0].clientX - x;
     const dy = e.changedTouches[0].clientY - y;
     if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
-    if (target.closest(".sheet, input, select, textarea, .sched-scroll, .ts-mobile, .m-tabbar")) return;
+    if (target.closest(".sheet, input, select, textarea, .sched-scroll, .ts-mobile, .m-tabbar, .kc-scroller, .tour-pop")) return;
     if (target.closest(".cal-wrap")) {
       moveMonth(dx < 0 ? 1 : -1);
     } else if (target.closest("#sched-day-list, .m-days")) {
       moveSchedDay(dx < 0 ? 1 : -1);
-    } else return;
+    } else {
+      // 나머지 자리: 하단 메뉴처럼 옆 탭으로 (왼쪽으로 밀면 오른쪽 탭). 직원 · 급여 상세 같은 상세 화면에서는 안 함
+      if (!ADMIN_SITE || tour) return;
+      const name = route().name === "day" ? "calendar" : route().name;
+      const next = M_TABS[M_TABS.indexOf(name) + (dx < 0 ? 1 : -1)];
+      if (!M_TABS.includes(name) || !next) return;
+      haptic(8);
+      navigateMobileTab(`#/${next}`);
+      return;
+    }
     haptic(8);
     render();
   },
@@ -4683,7 +4996,7 @@ function renderInstallHint() {
 // ---------- 둘러보기(로그인 전): 보기만, 고치는 동작은 막는다 ----------
 // 화면을 옮겨 다니고 펼쳐 보는 동작만 허용. 나머지(추가·수정·삭제·저장·내보내기)는 안내만 띄운다.
 const DEMO_ALLOWED = new Set([
-  "prev-month", "next-month", "open-year", "pick-month", "close-panel", "go-home", "toggle-staff", "toggle-rec", "toggle-help",
+  "prev-month", "next-month", "open-year", "pick-month", "toggle-month", "close-panel", "go-home", "toggle-staff", "toggle-rec", "toggle-help",
   "payroll-prev", "payroll-next", "preview-payslip", "open-payslip", "close-payslip",
   "open-employee-page", "employee-list", "open-pay-page", "open-sheet", "close-sheet", "sched-day", "open-today", "install-app", "dismiss-install", "start-tour", "toggle-mobile-menu",
 ]);

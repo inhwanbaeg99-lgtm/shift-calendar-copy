@@ -654,3 +654,95 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
   .m-screen-calendar .day-page .staff .add-btn { height: 56px; margin-top: 10px; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); color: #379fef; font-size: 14px; font-weight: 700; }
   .m-screen-calendar .day-page .staff .add-form { margin-top: 10px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); }
 }
+/* ---------- 모바일 관리자 출·퇴근 (시안 A): 주간 줄 ↔ 위아래로 이어지는 월 달력 + 고른 날 상세 ---------- */
+@media (max-width: 767px) {
+  .m-cal-back { display: inline-flex; align-items: center; gap: 2px; height: 44px; margin-left: -6px; padding: 0 6px; border: 0; background: none; color: var(--ink); font: inherit; font-size: 24px; font-weight: 700; letter-spacing: -.035em; white-space: nowrap; cursor: pointer; }
+  .m-cal-back svg { width: 24px; height: 24px; }
+  .kc-cal { margin: 4px 0 12px; }
+  .kc-wd, .kc-row, .kc-wk { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); text-align: center; }
+  .kc-wd span { padding: 4px 0 6px; font-size: 12px; font-weight: 500; color: var(--ink-sub); }
+  .kc-wd span.sun { color: var(--red); }
+  .kc-vp { position: relative; overflow: hidden; transition: height .42s cubic-bezier(.22,.75,.2,1); }
+  .kc-vp.no-anim, .kc-vp.no-anim .kc-wk { transition: none !important; }
+  .kc-scroller { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: none; }
+  .kc-scroller::-webkit-scrollbar { display: none; }
+  .kc-page { flex: 0 0 100%; scroll-snap-align: start; scroll-snap-stop: always; }
+  .kc-day { display: flex; flex-direction: column; align-items: center; gap: 4px; height: 56px; padding: 2px 0 0; border: 0; background: none; font: inherit; color: var(--ink); cursor: pointer; }
+  .kc-num { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 999px; font-size: 18px; font-weight: 650; transition: background .25s, color .25s; }
+  .kc-day.sun .kc-num { color: var(--red); }
+  .kc-day.sat .kc-num, .kc-day.today .kc-num { color: #379fef; }
+  .kc-day.other .kc-num, .kc-day.other .kc-mark { opacity: .3; }
+  .kc-day.on .kc-num { background: #59B5FF; color: #18334b; box-shadow: 0 6px 16px #59b5ff40; opacity: 1; }
+  .kc-mark { width: 5px; height: 5px; border-radius: 999px; }
+  .kc-mark.ok { background: #59B5FF; }
+  .kc-mark.warn { background: var(--red); }
+  .kc-stream { height: 100%; overflow: hidden; overscroll-behavior: contain; scrollbar-width: none; }
+  .kc-stream::-webkit-scrollbar { display: none; }
+  .kc-stream.ready { overflow-y: auto; scroll-snap-type: y mandatory; }
+  .kc-rows { --kc-row: 56px; }
+  .kc-wk { height: var(--kc-row); }
+  .kc-wk .kc-day { height: auto; }
+  .kc-wk.move { transition: transform .42s cubic-bezier(.22,.75,.2,1); will-change: transform; }
+  .kc-wk.month-start { scroll-snap-align: start; scroll-snap-stop: always; }
+  .kc-rows .kc-day { transition: opacity .35s ease; }
+  .kc-rows .kc-day.dim { opacity: .3; }
+  .kc-grip { display: flex; justify-content: center; width: 100%; height: 26px; padding: 0; border: 0; background: none; color: var(--ink-sub); cursor: pointer; }
+  .kc-grip svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; transition: transform .42s cubic-bezier(.22,.75,.2,1); }
+  .kc.open .kc-grip svg { transform: rotate(180deg); }
+  /* 새로 뜨는 상세 · 월 글자: 위아래가 아니라 옆에서 (오늘 이후 날짜는 왼쪽 → 오른쪽, 이전은 오른쪽 → 왼쪽) */
+  .kc-content.enter.from-left { animation: kc-from-left .34s cubic-bezier(.22,.75,.2,1); }
+  .kc-content.enter.from-right { animation: kc-from-right .34s cubic-bezier(.22,.75,.2,1); }
+  .kc-content.enter.fade { animation: kc-fade .3s ease; }
+  .m-cal-back .kc-m { display: inline-block; }
+  .m-cal-back .kc-m.from-left { animation: kc-from-left .3s cubic-bezier(.22,.75,.2,1); }
+  .m-cal-back .kc-m.from-right { animation: kc-from-right .3s cubic-bezier(.22,.75,.2,1); }
+  @keyframes kc-from-left { from { opacity: 0; transform: translateX(-24px); } }
+  @keyframes kc-from-right { from { opacity: 0; transform: translateX(24px); } }
+  @keyframes kc-fade { from { opacity: 0; } }
+
+  /* 고른 날 상세: 하늘색 카드(큰 날짜 + 요일 + 출근한 사람 흰 박스) → 근무자 박스 */
+  .kc-content .day-area-inner { display: block; height: auto; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
+  .kc-content .date-box.m-date { display: block; padding: 0; border-radius: 0; background: none; box-shadow: none; }
+  .kc-content .m-date-hero { display: block; margin: 0 0 22px; padding: 18px 16px 16px; }
+  .m-date-num { display: block; font-size: 40px; font-weight: 800; letter-spacing: -.03em; line-height: 1.05; color: var(--ink); }
+  .m-date-wd { display: block; margin-top: 4px; font-size: 15px; font-weight: 600; color: var(--ink-2); }
+  .m-date-num.rest, .m-date-wd.rest { color: var(--red); }
+  .kc-content .m-in-boxes { display: flex; flex-direction: column; gap: 8px; margin: 14px 0 0; padding: 0; list-style: none; }
+  .kc-content .m-in-boxes .in-item { margin: 0; border: 1px solid #ffffffcc; border-radius: 14px; background: #fff; box-shadow: 0 2px 10px #59b5ff14; }
+  .kc-content .m-in-boxes .in-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 46px; padding: 8px 14px; border: 0; border-radius: 14px; background: none; text-align: left; }
+  .kc-content .m-in-boxes .in-name { font-size: 15px; font-weight: 700; }
+  .kc-content .m-in-boxes .in-time { margin-left: auto; font-size: 14px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .kc-content .m-in-boxes .in-time.under { color: var(--red); }
+  .kc-content .m-in-boxes .in-action { padding: 0 14px 12px; }
+  .kc-content .m-in-boxes .in-empty { padding: 2px 2px; font-size: 14px; color: var(--ink-sub); background: none; border: 0; box-shadow: none; }
+  .kc-content .staff { display: block; padding: 0; }
+  .kc-content .staff > .sub { display: none; }
+  .kc-content .staff-title { margin: 0 4px 10px; font-size: 15px; font-weight: 700; color: var(--ink); }
+  .kc-content .staff-list { display: flex; flex-direction: column; gap: 8px; margin: 0; }
+  .kc-content .staff-item { overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); box-shadow: none; }
+  .kc-content .staff-item.expanded { box-shadow: inset 3px 0 0 #59B5FF; }
+  .kc-content .staff-list > .in-empty { padding: 22px 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); color: var(--ink-sub); text-align: center; }
+  .kc-content .staff-name-btn { display: grid; grid-template-columns: minmax(0,1fr) auto; grid-template-areas: "name badge" "time badge"; row-gap: 2px; column-gap: 12px; min-height: 64px; padding: 14px 16px; }
+  .kc-content .staff-name { grid-area: name; font-size: 16px; }
+  .kc-content .staff-time { grid-area: time; font-size: 13px; }
+  .kc-content .staff-name-btn .badge { grid-area: badge; align-self: center; justify-self: end; }
+  .kc-content .staff-action { padding: 0 16px 14px; }
+  .kc-content .staff .add-btn { height: 56px; margin-top: 10px; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); color: #379fef; font-size: 14px; font-weight: 700; }
+  .kc-content .staff .add-form { margin-top: 10px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); }
+}
+
+/* ---------- 근무 수정 요청 (MGC 근무와 같게) ---------- */
+.badge.req { background: #ffe8f7; color: #FF05BF; }
+.change-inbox { margin: 0 0 16px; padding: 14px 16px; border: 1px solid #ff05bf33; border-radius: 16px; background: #fff7fc; }
+.change-inbox h3 { margin: 0 0 10px; font-size: 15px; color: var(--ink); }
+.change-inbox h3 span { color: #FF05BF; }
+.change-request { display: flex; flex-direction: column; gap: 10px; padding: 12px 0; border-top: 1px solid #ff05bf1f; }
+.change-request:first-of-type { border-top: 0; padding-top: 2px; }
+.change-request b { font-size: 15px; }
+.request-time { margin: 4px 0 0; font-size: 14px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.request-new-time { color: var(--ink); }
+.request-new-time.under { color: var(--red); }
+.request-new-time.over { color: #379fef; }
+.request-reason { margin: 4px 0 0; font-size: 13px; color: var(--ink-sub); }
+.edit-note { margin: 0 0 8px; font-size: 13px; color: var(--ink-sub); }
+.change-reason { width: 100%; margin: 0 0 8px; }
