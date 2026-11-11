@@ -1491,7 +1491,7 @@ function renderPaySheet(emp) {
       }
     </ul>
     <button type="button" class="m-allowance-add" data-action="open-payslip" data-id="${emp.id}"><span aria-hidden="true">＋</span> 수당 추가하기</button>
-    <details class="m-work-days"><summary><span class="m-work-days-heading"><span>날짜별 근무</span><strong>${hrs(r.hours)}</strong></span></summary><ul class="m-days-list">${days || `<li><span>근무 기록이 없어요</span></li>`}</ul>
+    <details class="m-work-days"><summary><span class="m-work-days-heading"><span>날짜별 근무</span><strong>${hrs(r.hours)}</strong></span><span class="m-work-chevron" aria-hidden="true">${DD_CHEVRON}</span></summary><ul class="m-days-list">${days || `<li><span>근무 기록이 없어요</span></li>`}</ul>
     <button type="button" class="btn-ghost m-share" data-action="share-ts-image" data-id="${emp.id}">카카오톡 전송하기</button></details>
 `;
 }
@@ -3759,6 +3759,41 @@ function closePanel() {
     render();
   }, PANEL_ANIM_MS);
 }
+
+// 날짜별 근무: 닫을 때도 내용이 사라지기 전에 카드 높이를 부드럽게 줄인다.
+const workDaysAnimations = new WeakMap();
+app.addEventListener("click", e => {
+  const summary = e.target.closest(".m-work-days > summary");
+  if (!summary) return;
+  e.preventDefault();
+  const card = summary.parentElement;
+  const running = workDaysAnimations.get(card);
+  const start = card.getBoundingClientRect().height;
+  const opening = running ? !running.opening : !card.open;
+  running?.animation.cancel();
+  card.style.height = "";
+  card.style.overflow = "hidden";
+  card.open = true;
+  const full = card.getBoundingClientRect().height;
+  const style = getComputedStyle(card);
+  const closed = summary.getBoundingClientRect().height + parseFloat(style.borderTopWidth) + parseFloat(style.borderBottomWidth);
+  card.classList.toggle("is-expanding", opening);
+  if (reducedMotion()) {
+    card.open = opening;
+    card.style.overflow = "";
+    workDaysAnimations.delete(card);
+    return;
+  }
+  const animation = card.animate([{height:`${start}px`},{height:`${opening ? full : closed}px`}],{duration:320,easing:"cubic-bezier(.22,.75,.2,1)",fill:"both"});
+  workDaysAnimations.set(card,{animation,opening});
+  animation.finished.then(()=>{
+    if(workDaysAnimations.get(card)?.animation!==animation) return;
+    card.open = opening;
+    animation.cancel();
+    card.style.overflow = "";
+    workDaysAnimations.delete(card);
+  },()=>{});
+});
 
 // 텍스트 메뉴의 선택 배경을 손가락으로 좌우 이동
 let textNavDrag = null;

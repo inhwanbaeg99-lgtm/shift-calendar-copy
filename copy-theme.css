@@ -489,10 +489,19 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
 
 .m-work-days-heading { gap: 4px; }
 .m-work-days-heading > span { font-size: 14px; font-weight: 600; color: var(--ink-2); opacity: .85; }
-.m-work-days-heading > strong { display: block; font-size: 32px; font-weight: 800; letter-spacing: -.03em; color: var(--ink); }
+.m-work-days-heading > strong { display: block; font-size: 28px; font-weight: 800; letter-spacing: -.03em; color: var(--ink); }
 .m-work-days summary::after { transform: rotate(45deg); transition: transform .3s cubic-bezier(.22,.75,.2,1); }
 .m-work-days[open] summary::after { transform: rotate(225deg); }
 @media (prefers-reduced-motion: reduce) { .m-work-days summary::after { transition: none; } }
 
 .m-pay-detail .m-work-days .m-share { background: #59B5FF; border-color: #59B5FF; color: #18334b; margin-bottom: 16px; }
 .m-pay-detail .m-work-days .m-share:hover { background: #42aaff; border-color: #42aaff; }
+
+.m-pay-detail .m-work-days .m-share,
+.m-pay-detail .m-work-days .m-share:hover { background: #FFFFFF; border-color: #b9ddfa; color: #18334b; }
+.m-work-days summary::after { content: none; }
+.m-work-chevron { display: flex; align-items: center; color: var(--ink-sub); }
+.m-work-chevron svg { width: 20px; height: 20px; transition: transform .3s cubic-bezier(.22,.75,.2,1); }
+.m-work-days .m-work-chevron svg { transform: rotate(0deg); }
+.m-work-days.is-expanding .m-work-chevron svg { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) { .m-work-chevron svg { transition: none; } }
