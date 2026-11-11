@@ -463,3 +463,15 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
 
 .m-pay-detail { overflow-anchor: none; }
 .pay-inline-paper { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+
+/* 급여 상세 구성 */
+.m-pay-detail .m-pay-amount.is-payslip ~ .m-lines,
+.m-pay-detail .m-pay-amount.is-payslip ~ .m-allowance-add { display: none; }
+.m-allowance-add { width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; margin: 10px 0 24px; padding: 13px; border: 1px dashed #59b5ff77; border-radius: 12px; background: transparent; color: #3684bc; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.m-work-days { margin: 18px 0; border-top: 1px solid var(--line); }
+.m-work-days summary { display: flex; align-items: center; justify-content: space-between; list-style: none; padding: 16px 0; font-size: 14px; font-weight: 600; cursor: pointer; }
+.m-work-days summary::-webkit-details-marker { display: none; }
+.m-work-days summary::after { content: ''; width: 8px; height: 8px; border-right: 1.8px solid currentColor; border-bottom: 1.8px solid currentColor; transform: rotate(45deg); margin-right: 4px; }
+.m-work-days[open] summary::after { transform: rotate(225deg); }
+.m-top .m-pay-download { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 0; border: 0; background: transparent; color: var(--ink); cursor: pointer; }
+.m-pay-download svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }

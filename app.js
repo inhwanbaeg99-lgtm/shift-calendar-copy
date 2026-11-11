@@ -1083,7 +1083,7 @@ function renderMobileShell(active, content) {
       ${route().name === "day" ? `<button type="button" class="m-day-back" data-action="go-home" aria-label="달력으로 돌아가기">${ICON_PREV}</button>` : ""}
       ${route().name === "pay-detail" ? `<a class="m-day-back" href="#/records" aria-label="급여 목록으로 돌아가기">${ICON_PREV}</a>` : ""}
       ${route().name === "pay-detail" ? `<div class="m-pay-header-person">${mobilePayEmployeeSelect(route().id)}</div>` : `<span class="m-store" aria-hidden="true"></span><button type="button" class="m-tour" data-action="start-tour" aria-label="도움말" title="도움말">?</button>`}
-      ${demoLoaded ? `<a class="m-login" href="#/login" aria-label="로그인" title="로그인">${accountIcon}</a>` : `<a class="m-login" href="#/mypage" aria-label="마이페이지" title="마이페이지">${accountIcon}</a>`}
+      ${route().name === "pay-detail" ? `<button type="button" class="m-pay-download" data-action="payslip-pdf-one" data-id="${esc(route().id)}" aria-label="명세서 PDF 다운로드" title="명세서 PDF 다운로드"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 16v4h16v-4"/></svg></button>` : demoLoaded ? `<a class="m-login" href="#/login" aria-label="로그인" title="로그인">${accountIcon}</a>` : `<a class="m-login" href="#/mypage" aria-label="마이페이지" title="마이페이지">${accountIcon}</a>`}
     </header>
     ${demoLoaded ? "" : `<div class="m-staff-shortcut">${staffCalLink("m-staff-link")}</div>`}
     ${demoLoaded ? `<p class="demo-bar">샘플 매장을 둘러보는 중이에요. <a href="#/signup">매장 등록</a> · <a href="#/login">로그인</a></p>` : ""}
@@ -1353,7 +1353,6 @@ function renderPayPage(id, month) {
   const summary = payrollRow(emp, month, monthRecords(month, emp.id));
   return renderAdminShell("records", `
     <section class="m-pay-detail" aria-label="직원 급여 상세">
-      <p class="m-pay-detail-summary">${Number(month.slice(5, 7))}월 · ${summary.days}일 · ${hrs(summary.hours)}</p>
       ${renderPaySheet(emp)}
     </section>
     ${renderPayslipModal()}`);
@@ -1491,13 +1490,10 @@ function renderPaySheet(emp) {
           : `${line("소득세", r.income)}${line("지방소득세", r.local)}`
       }
     </ul>
-    <p class="sheet-label">날짜별 근무</p>
-    <ul class="m-days-list">${days || `<li><span>근무 기록이 없어요</span></li>`}</ul>
+    <button type="button" class="m-allowance-add" data-action="open-payslip" data-id="${emp.id}"><span aria-hidden="true">＋</span> 수당 추가하기</button>
+    <details class="m-work-days"><summary>날짜별 근무</summary><ul class="m-days-list">${days || `<li><span>근무 기록이 없어요</span></li>`}</ul></details>
     <button type="button" class="btn-ghost m-share" data-action="share-ts-image" data-id="${emp.id}">카카오톡 전송하기</button>
-    <div class="sheet-actions">
-      <button type="button" class="btn-ghost" data-action="open-payslip" data-id="${emp.id}">수당 · 명세서</button>
-      <button type="button" class="btn-primary" data-action="payslip-pdf-one" data-id="${emp.id}">명세서 PDF</button>
-    </div>`;
+`;
 }
 
 // ---------- 급여 계산 ----------
