@@ -1511,7 +1511,7 @@ function renderMobileShell(active, content) {
       ${route().name === "day" && !mobileAdminCal() ? `<button type="button" class="m-day-back m-back-label" data-action="go-home" aria-label="달력으로 돌아가기">${ICON_PREV}<span>${Number(route().date.slice(5, 7))}월</span></button>` : ""}
       ${route().name === "pay-detail" ? `<a class="m-day-back" href="#/records" aria-label="급여 목록으로 돌아가기">${ICON_PREV}</a>` : ""}
       ${route().name === "pay-detail" ? `<div class="m-pay-header-person">${mobilePayEmployeeSelect(route().id)}</div>` : `${{ employees: "직원", schedule: "근무표" }[route().name] ? `<h1 class="m-page-title">${{ employees: "직원", schedule: "근무표" }[route().name]}</h1>` : `<span class="m-store" aria-hidden="true"></span>`}<button type="button" class="m-tour" data-action="start-tour" aria-label="도움말" title="도움말">?</button>`}
-      ${route().name === "pay-detail" ? `<button type="button" class="m-pay-download" data-action="payslip-pdf-one" data-id="${esc(route().id)}" aria-label="명세서 PDF 다운로드" title="명세서 PDF 다운로드"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 16v4h16v-4"/></svg></button>` : demoLoaded ? `<a class="m-login" href="#/login" aria-label="로그인" title="로그인">${accountIcon}</a>` : `<a class="m-login" href="#/mypage" aria-label="마이페이지" title="마이페이지">${accountIcon}</a>`}
+      ${route().name === "pay-detail" ? `<span class="m-pay-download-gap" aria-hidden="true"></span>` : demoLoaded ? `<a class="m-login" href="#/login" aria-label="로그인" title="로그인">${accountIcon}</a>` : `<a class="m-login" href="#/mypage" aria-label="마이페이지" title="마이페이지">${accountIcon}</a>`}
     </header>
     ${demoLoaded ? "" : `<div class="m-staff-shortcut">${staffCalLink("m-staff-link")}</div>`}
     ${demoLoaded ? `<p class="demo-bar">샘플 매장을 둘러보는 중이에요. <a href="#/signup">매장 등록</a> · <a href="#/login">로그인</a></p>` : ""}
@@ -1830,6 +1830,8 @@ function previewPayslipFromAmount(id) {
   paperFrame.className = "pay-inline-frame";
   paper.before(paperFrame);
   paperFrame.append(paper);
+  // 명세서 용지 오른쪽 위: PDF 다운로드 (연한 분홍)
+  paperFrame.insertAdjacentHTML("beforeend", `<button type="button" class="pay-inline-download" data-action="payslip-pdf-one" data-id="${esc(emp.id)}" aria-label="명세서 PDF 다운로드" title="명세서 PDF 다운로드"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 16v4h16v-4"/></svg></button>`);
   paper.style.transformOrigin = "top left";
   paper.style.transform = `scale(${scale})`;
   paperFrame.style.height = `${paper.offsetHeight*scale}px`;

@@ -786,3 +786,16 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
   .m-pay-detail .m-work-days-heading { gap: 2px; }
   .m-pay-detail .m-work-days-heading > strong { font-size: 24px; }
 }
+/* ---------- 진한 파란 · 남색 버튼을 하늘색 계열로 ---------- */
+.help-btn:hover, .help-btn.on, .tour-fab { background: #59B5FF; color: #18334b; box-shadow: 0 6px 20px #59b5ff40; }
+.btn-primary:not(:disabled):hover, .pill:not(.plain):not(.plain-dark):hover { background: #42aaff; }
+.m-payslip-preview-btn, .m-allowance-add, .m-bubble-nav .m-tab, .ps-ids b { color: #379fef; }
+/* 날짜별 근무의 카카오톡 전송하기: 하늘색 버튼 */
+.m-pay-detail .m-work-days .m-share { display: block; width: 100%; min-height: 48px; margin: 4px 0 16px; border: 0; border-radius: 14px; background: #59B5FF; color: #18334b; font-weight: 700; }
+.m-pay-detail .m-work-days .m-share:hover { background: #42aaff; }
+/* 명세서 용지 안 오른쪽 위 다운로드 (연한 분홍) */
+.pay-inline-download { position: absolute; top: 12px; right: 10px; z-index: 4; display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 1px solid #ff05bf55; border-radius: 8px; background: #fff0fb; color: #FF05BF; cursor: pointer; }
+.pay-inline-download svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.m-pay-download-gap { width: 40px; height: 40px; }
+/* 화면 미리보기에서만: 다운로드 버튼 자리를 위해 월 표시를 조금 왼쪽으로 (PDF · 인쇄는 그대로) */
+.pay-inline-paper .ps-top .ps-month { margin-right: 46px; }
