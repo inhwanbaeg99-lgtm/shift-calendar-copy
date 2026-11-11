@@ -848,3 +848,85 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
 }
 /* 하늘색 그라데이션 박스 그림자: 출·퇴근 날짜 카드와 같게 */
 .m-hero, .m-hero.small, .m-pay-amount.is-payslip { box-shadow: 0 10px 30px #59b5ff1f; }
+/* 펼친 명세서의 '닫기'도 '명세서' 버튼과 같은 크기 (색은 분홍 그대로) */
+.m-pay-amount.is-payslip .pay-preview-close { min-height: 36px; padding: 0 14px; border-radius: 12px; font-size: 13px; font-weight: 700; }
+
+/* ---------- 급여: 합계 박스 오른쪽 위 다운로드 → 흐린 화면 위 받기 카드 ---------- */
+.m-pay-hero { position: relative; }
+.m-hero-dl { position: absolute; top: 12px; right: 12px; display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 12px; background: #59b5ff20; color: #379fef; cursor: pointer; }
+.m-hero-dl svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.m-blur-layer { position: fixed; inset: 0; z-index: 260; display: flex; align-items: center; justify-content: center; padding: 24px 20px; background: #f4faff99; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); animation: m-blur-in .28s ease; }
+@keyframes m-blur-in { from { opacity: 0; } }
+.m-blur-card { width: min(100%, 380px); max-height: 100%; display: flex; flex-direction: column; gap: 10px; padding: 20px 16px 16px; overflow: hidden; border: 1px solid var(--line); border-radius: 22px; background: #fff; box-shadow: 0 18px 50px #59b5ff2e; animation: m-card-in .34s cubic-bezier(.22,.75,.2,1); }
+@keyframes m-card-in { from { opacity: 0; transform: translateY(14px) scale(.98); } }
+.m-blur-title { margin: 0 4px 4px; font-size: 17px; font-weight: 800; color: var(--ink); }
+.m-blur-btn { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; width: 100%; padding: 14px 16px; border: 0; border-radius: 14px; background: #59b5ff20; color: #379fef; font: inherit; text-align: left; cursor: pointer; }
+.m-blur-btn b { font-size: 15px; }
+.m-blur-btn small { font-size: 12px; color: var(--ink-sub); font-weight: 500; }
+.m-blur-btn:disabled { opacity: .5; cursor: default; }
+.m-blur-close { min-height: 44px; margin-top: 2px; border: 0; border-radius: 14px; background: #f1f6fb; color: var(--ink); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+/* 근무표 목록 */
+.m-ver-card { max-height: min(80vh, 640px); }
+.m-ver-list { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; min-height: 0; margin: 0 -4px; padding: 0 4px; }
+.m-ver { border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+.m-ver.open { border-color: #59b5ff77; }
+.m-ver-head { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; width: 100%; padding: 12px 14px; border: 0; background: none; font: inherit; text-align: left; cursor: pointer; }
+.m-ver-head b { display: flex; align-items: center; gap: 6px; font-size: 15px; color: var(--ink); }
+.m-ver-head em { padding: 2px 8px; border-radius: 999px; background: #59b5ff20; color: #379fef; font-size: 11px; font-style: normal; font-weight: 700; }
+.m-ver-head em.next { background: #ffe8f7; color: #FF05BF; }
+.m-ver-head small { font-size: 12px; color: var(--ink-sub); }
+.m-ver-detail { display: flex; flex-direction: column; gap: 6px; margin: 0 14px; padding: 10px 0; border-top: 1px solid var(--line); }
+.m-ver-detail p { display: flex; gap: 10px; margin: 0; font-size: 13px; color: var(--ink-2); line-height: 1.45; }
+.m-ver-detail p b { flex: 0 0 18px; color: var(--ink); }
+.m-ver-detail p b.sun { color: var(--red); }
+.m-ver-load { margin: 0 14px 12px; width: calc(100% - 28px); }
+
+/* ---------- 스케줄: 요일 근무자 추가는 그 자리에서 ---------- */
+@media (max-width: 767px) {
+  .m-slot-inline { margin-top: 10px; padding: 14px 16px; border: 1px solid #59b5ff77; border-radius: 16px; background: #fff; animation: kc-fade .3s ease; }
+  .m-slot-inline .staff-title { margin: 0 0 10px; font-size: 15px; font-weight: 700; color: var(--ink); }
+  .m-slot-inline .field { min-height: 44px; border: 1px solid #cfe3f5; border-radius: 12px; background: #f1f7fd; color: var(--ink); }
+  .m-slot-inline .field.time { text-align: center; }
+  .m-slot-inline .field:focus { border-color: #59B5FF; background: #fff; outline: none; box-shadow: 0 0 0 3px #59b5ff26; }
+  .m-slot-inline select.field { width: 100%; margin-bottom: 10px; padding: 0 12px; }
+  .m-slot-inline .edit-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; color: var(--ink-sub); }
+  .m-slot-inline .edit-row .field { flex: 1; min-width: 0; }
+  .m-slot-inline .action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .m-slot-inline .btn-ghost { border: 0; border-radius: 14px; background: #f1f6fb; color: var(--ink); }
+  .m-slot-inline .btn-primary { border-radius: 14px; }
+}
+
+/* ---------- 직원 상세 (휴대폰) ---------- */
+@media (max-width: 767px) {
+  .m-emp-detail { padding-bottom: 8px; }
+  .m-emp-pay { display: flex; flex-direction: column; gap: 2px; margin: 4px 0 22px; padding: 18px; }
+  .m-emp-pay > strong { font-size: 24px; }
+  .m-emp-wage { display: flex; align-items: baseline; gap: 4px; margin-top: 2px; }
+  .m-emp-wage input.field { width: 100%; min-width: 0; padding: 0; border: 0; background: none; color: var(--ink); font-size: 32px; font-weight: 800; letter-spacing: -.02em; outline: none; box-shadow: none; }
+  .m-emp-wage input.field:focus { box-shadow: 0 2px 0 #59B5FF; }
+  .m-emp-wage span { font-size: 20px; font-weight: 700; color: var(--ink); }
+  .m-emp-pay .m-hero-meta { margin-top: 8px; font-size: 14px; }
+  .m-sec-title { margin: 0 4px 10px; font-size: 15px; font-weight: 700; color: var(--ink); }
+  .m-emp-week, .m-emp-settings { margin-bottom: 22px; overflow: hidden; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); }
+  .m-emp-day { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 6px 12px 6px 16px; border-bottom: 1px solid var(--line); }
+  .m-emp-day:last-child { border-bottom: 0; }
+  .m-emp-day > span { flex: 0 0 22px; font-size: 15px; font-weight: 700; color: var(--ink); }
+  .m-emp-day.sun > span { color: var(--red); }
+  .m-emp-day.sat > span { color: #379fef; }
+  .m-emp-day input.field { flex: 1; min-width: 0; min-height: 40px; padding: 0 12px; border: 1px solid #cfe3f5; border-radius: 12px; background: #f1f7fd; color: var(--ink); font-size: 15px; font-variant-numeric: tabular-nums; }
+  .m-emp-day input.field:focus { border-color: #59B5FF; background: #fff; outline: none; box-shadow: 0 0 0 3px #59b5ff26; }
+  .m-emp-set { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; padding: 8px 12px 8px 16px; border-bottom: 1px solid var(--line); }
+  .m-emp-set:last-child { border-bottom: 0; }
+  .m-emp-set > span { font-size: 15px; font-weight: 600; color: var(--ink); }
+  .m-emp-seg { display: inline-grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 3px; border-radius: 12px; background: #f1f6fb; }
+  .m-emp-toggle { min-width: 64px; min-height: 34px; padding: 0 12px; border: 0; border-radius: 10px; background: none; color: var(--ink-sub); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .m-emp-toggle.on { background: #fff; color: #379fef; font-weight: 700; box-shadow: 0 1px 4px #18334b14; cursor: default; }
+  .m-emp-note { margin: -10px 4px 18px; font-size: 13px; color: var(--ink-sub); }
+  .m-emp-remove { display: block; margin: 4px auto 0; padding: 10px 16px; border: 0; background: none; color: var(--red); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+}
+@media (max-width: 767px) {
+  a.m-cal-back { text-decoration: none; }
+  /* 시급 숫자 바로 옆에 '원' */
+  .m-emp-wage { justify-content: flex-start; }
+  .m-emp-wage input.field { flex: 0 0 auto; min-width: 1.4em; max-width: 80%; }
+}
