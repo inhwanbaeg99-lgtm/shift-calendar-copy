@@ -832,3 +832,19 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
 .pay-inline-download { top: 8px; right: 8px; width: 38px; height: 38px; border-radius: 12px; background: #fff0fbbf; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 2px 10px #ff05bf1f; }
 .pay-inline-download svg { width: 19px; height: 19px; }
 .pay-inline-paper .ps-top .ps-month { margin-right: 74px; }
+/* 로딩: 아이콘 버튼은 도는 표시 */
+.busy-spin { display: inline-block; width: 18px; height: 18px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 999px; animation: busy-spin .7s linear infinite; }
+@keyframes busy-spin { to { transform: rotate(360deg); } }
+/* 급여 상세 '명세서' 버튼: 직원 탭 '+ 직원 추가'와 같은 모양 (자리는 그대로) */
+.m-pay-amount:not(.is-payslip) .m-payslip-preview-btn { min-height: 36px; padding: 0 14px; border: 0; border-radius: 12px; background: #59b5ff20; color: #379fef; font-size: 13px; font-weight: 700; }
+/* 명세서 다운로드: 더 크게 */
+.pay-inline-download { top: 6px; right: 6px; width: 46px; height: 46px; border-radius: 14px; }
+.pay-inline-download svg { width: 22px; height: 22px; }
+.pay-inline-download .busy-spin { width: 20px; height: 20px; }
+.pay-inline-paper .ps-top .ps-month { margin-right: 100px; }
+/* 스케줄 '+ 요일 근무자 추가': 출·퇴근 '+ 근무자 추가'와 같은 모양 */
+@media (max-width: 767px) {
+  .m-screen-schedule .m-add-shift { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 0; height: auto; margin: 10px 0 0; padding: 13px; border: 1px solid #59b5ff77; border-radius: 12px; background: transparent; color: #379fef; font: inherit; font-size: 14px; font-weight: 600; }
+}
+/* 하늘색 그라데이션 박스 그림자: 출·퇴근 날짜 카드와 같게 */
+.m-hero, .m-hero.small, .m-pay-amount.is-payslip { box-shadow: 0 10px 30px #59b5ff1f; }
