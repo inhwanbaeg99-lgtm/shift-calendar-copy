@@ -460,3 +460,6 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
 
 /* 금액 이동용 span이 지급 금액 설명(span) 스타일을 상속하지 않도록 */
 .payslip .ps-net strong > span { font: inherit; color: inherit; letter-spacing: inherit; }
+
+.m-pay-detail { overflow-anchor: none; }
+.pay-inline-paper { backface-visibility: hidden; -webkit-backface-visibility: hidden; }

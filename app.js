@@ -1434,7 +1434,12 @@ function previewPayslipFromAmount(id) {
       };
       move.finished.then(clearAmountMorph,()=>{});
     }
-    source.animate([{height:`${previousHeight}px`},{height:`${expandedHeight}px`}],{duration:460,easing:"cubic-bezier(.22,.75,.2,1)"});
+    // height 애니메이션 대신 한 번 배치한 결과를 clip/transform으로 표시한다.
+    const hiddenBottom = Math.max(0, expandedHeight-previousHeight);
+    source.animate([{clipPath:`inset(0 0 ${hiddenBottom}px 0 round 18px)`},{clipPath:"inset(0 0 0px 0 round 18px)"}],{duration:460,easing:"cubic-bezier(.22,.75,.2,1)"});
+    for (let sibling=source.nextElementSibling;sibling;sibling=sibling.nextElementSibling) {
+      sibling.animate([{transform:`translateY(${-hiddenBottom}px)`},{transform:"translateY(0)"}],{duration:460,easing:"cubic-bezier(.22,.75,.2,1)"});
+    }
     paper.querySelectorAll(".payslip > :not(.ps-net), .ps-net > span").forEach(el =>
       el.animate([{opacity:0},{opacity:1}],{duration:260,delay:220,fill:"both"})
     );
@@ -1447,7 +1452,12 @@ function previewPayslipFromAmount(id) {
     source.removeAttribute("aria-label");
     source.innerHTML = original;
     const to = source.getBoundingClientRect().height;
-    if (!reducedMotion()) source.animate([{height:`${from}px`},{height:`${to}px`}],{duration:360,easing:"cubic-bezier(.22,.75,.2,1)"});
+    if (!reducedMotion()) {
+      source.animate([{opacity:.7},{opacity:1}],{duration:180,easing:"ease-out"});
+      for (let sibling=source.nextElementSibling;sibling;sibling=sibling.nextElementSibling) {
+        sibling.animate([{transform:`translateY(${from-to}px)`},{transform:"translateY(0)"}],{duration:320,easing:"cubic-bezier(.22,.75,.2,1)"});
+      }
+    }
   });
 }
 
