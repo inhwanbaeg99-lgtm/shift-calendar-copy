@@ -811,11 +811,11 @@ function renderDateBox(date, { closable }) {
     .map(
       (r) => `
         <li class="in-item${r.id === state.justAddedId ? " new" : ""}">
-          <${ADMIN_SITE ? `button type="button" data-action="toggle-rec" data-id="${r.employeeId}"` : "div"} class="in-row">
+          <${ADMIN_SITE && !mobile ? `button type="button" data-action="toggle-rec" data-id="${r.employeeId}"` : "div"} class="in-row">
             <span class="in-name">${nameLabel(employeeById(r.employeeId), r)}</span>
             ${needsCheck(r) ? `<span class="in-time under">${formatTime(r.clockIn)} ~ 퇴근 확인 필요</span>` : noEndOpen(r) ? `<span class="in-time">${formatTime(r.clockIn)} ~ -</span>` : `<span class="in-time${diffClass(employeeById(r.employeeId), date, hoursBetween(r.clockIn, r.clockOut))}">${formatTime(r.clockIn)} ~ ${formatTime(r.clockOut)}</span>`}
-          </${ADMIN_SITE ? "button" : "div"}>
-          ${ADMIN_SITE && state.expandedRecId === r.employeeId ? `<div class="in-action">${renderRecordActions(r)}</div>` : ""}
+          </${ADMIN_SITE && !mobile ? "button" : "div"}>
+          ${ADMIN_SITE && !mobile && state.expandedRecId === r.employeeId ? `<div class="in-action">${renderRecordActions(r)}</div>` : ""}
         </li>`,
     )
     .join("");
@@ -868,12 +868,13 @@ function renderStaffItem(emp, date) {
   // 관리자 화면: 출근 기록이 없을 때만 (기록이 있으면 위쪽 출근 기록에서 고친다)
   // 직원: 오늘 · 지난 날짜는 이름을 눌러 출근 또는 수정 요청 (MGC 근무와 같게)
   const pending = pendingRequestFor(emp.id, date);
-  const editable = ADMIN_SITE ? !done : date <= today;
+  const editable = ADMIN_SITE ? !done || mobileAdminCal() : date <= today;
   // 이름 밑에는 항상 근무표 시간. 관리자가 고치는 칸에는 기록이 있으면 기록된 시간을 넣는다
   const shift = shiftFor(emp, date);
   // 직원 수정 요청 칸에는 기록이 있으면 기록된 시간을 넣는다
-  const start = !ADMIN_SITE && rec ? formatTime(rec.clockIn) : shift.start;
-  const end = !ADMIN_SITE && rec ? formatTime(rec.clockOut) : noTimeShift(emp, date) ? "" : shift.end;
+  const useRec = rec && (!ADMIN_SITE || mobileAdminCal());
+  const start = useRec ? formatTime(rec.clockIn) : shift.start;
+  const end = useRec ? (noEndOpen(rec) || (rec.noEnd && needsCheck(rec)) ? "" : formatTime(rec.clockOut)) : noTimeShift(emp, date) ? "" : shift.end;
   const expanded = editable && state.expandedId === emp.id;
 
   let action = "";
@@ -882,7 +883,8 @@ function renderStaffItem(emp, date) {
   } else if (expanded) {
     action = `
       <div class="action-row">
-        ${ADMIN_SITE && date > today ? `<button type="button" class="btn-ghost" data-action="edit-shift" data-id="${emp.id}">수정</button>` : ""}
+        ${ADMIN_SITE && (date > today || (mobileAdminCal() && done)) ? `<button type="button" class="btn-ghost" data-action="edit-shift" data-id="${emp.id}">수정</button>` : ""}
+        ${ADMIN_SITE && mobileAdminCal() && done ? `<button type="button" class="btn-ghost danger-ghost" data-action="remove-record" data-id="${emp.id}">기록 삭제</button>` : ""}
         ${!ADMIN_SITE && isToday && !done ? `<button type="button" class="btn-primary" data-action="clock-in" data-id="${emp.id}">출근</button>` : ""}
         ${!ADMIN_SITE && isToday && punchOpen(rec) ? `<button type="button" class="btn-primary" data-action="clock-out" data-id="${emp.id}">퇴근</button>` : ""}
         ${!ADMIN_SITE && !pending ? `<button type="button" class="btn-ghost" data-action="edit-shift" data-id="${emp.id}">수정 요청</button>` : ""}
@@ -4001,7 +4003,7 @@ function openYearView() {
   const view = app.querySelector(".year-view");
   const target = view?.querySelector(`[data-ym="${state.year}-${state.month}"]`);
   if (!view || !target) return;
-  view.scrollTop = target.closest(".year-block").offsetTop - 8;
+  view.scrollTop = target.closest(".year-block").offsetTop;
   if (reducedMotion()) return;
   const r = target.getBoundingClientRect(), v = view.getBoundingClientRect();
   view.style.transformOrigin = `${r.left + r.width / 2 - v.left}px ${r.top + r.height / 2 - v.top}px`;
