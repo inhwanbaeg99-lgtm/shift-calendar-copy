@@ -618,3 +618,39 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
 @media (max-width: 767px) {
   .m-screen-schedule .m-fold summary::after { border-color: var(--ink-sub); }
 }
+/* 출·퇴근 모바일: 직원 · 근무표 화면과 같은 카드 모양 */
+@media (max-width: 767px) {
+  /* 달력은 흰 카드 한 장 안에 (요일 줄 아래 가는 선) */
+  .m-screen-calendar .month-picker-calendar .cal-wrap { padding: 4px 6px 0; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); overflow: hidden; box-sizing: border-box; }
+  .m-screen-calendar .month-picker-calendar .m-weekdays { border-bottom: 1px solid var(--line); }
+  .m-screen-calendar .month-picker-calendar .m-weekdays .weekday { padding: 8px 0; }
+  .attendance-viewport .m-screen-calendar .admin-cal { padding-bottom: 8px; box-sizing: border-box; }
+
+  /* 날짜 상세: 겉 흰 상자 없이 요약 카드 → 출근 기록 → 근무 예정 */
+  .m-screen-calendar .day-page .day-area-inner { display: block; height: auto; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
+  .m-screen-calendar .day-page .date-box.m-date { display: block; padding: 0; border-radius: 0; background: none; box-shadow: none; }
+  .m-date-hero { display: flex; flex-direction: column; gap: 2px; margin: 0 0 18px; padding: 16px 18px; }
+  .m-date-hero .m-hero-meta { margin-top: 10px; font-size: 14px; }
+  .m-screen-calendar .day-page .m-day-heading { margin: 0 4px 10px; font-size: 15px; font-weight: 700; color: var(--ink); }
+  .m-screen-calendar .day-page .in-list.m-list { margin: 0 0 22px; padding: 0; gap: 0; border: 1px solid var(--line); box-shadow: none; }
+  .m-screen-calendar .day-page .m-list .in-item { margin: 0; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: none; }
+  .m-screen-calendar .day-page .m-list .in-item:last-child { border-bottom: 0; }
+  .m-screen-calendar .day-page .m-list .in-row { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 64px; padding: 14px 16px; border-radius: 0; background: none; box-shadow: none; }
+  .m-screen-calendar .day-page .m-list .in-name { font-size: 16px; font-weight: 700; }
+  .m-screen-calendar .day-page .m-list .in-time { margin-left: auto; font-size: 14px; font-variant-numeric: tabular-nums; }
+  .m-screen-calendar .day-page .m-list .in-action { padding: 0 16px 14px; }
+  /* 근무 예정: 같은 줄 모양, 상태 표시는 오른쪽 */
+  .m-screen-calendar .day-page .staff { display: block; padding: 0; }
+  .m-screen-calendar .day-page .staff-list { margin: 0; gap: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); }
+  .m-screen-calendar .day-page .staff-item { border-radius: 0; background: none; border-bottom: 1px solid var(--line); }
+  .m-screen-calendar .day-page .staff-item:last-child { border-bottom: 0; }
+  .m-screen-calendar .day-page .staff-item.expanded { box-shadow: inset 3px 0 0 #59B5FF; }
+  .m-screen-calendar .day-page .staff-name-btn { display: grid; grid-template-columns: 36px minmax(0,1fr) auto; grid-template-areas: "sw name badge" "sw time badge"; column-gap: 14px; row-gap: 2px; min-height: 64px; padding: 14px 16px; }
+  .m-screen-calendar .day-page .staff-name-btn .swatch { grid-area: sw; align-self: center; }
+  .m-screen-calendar .day-page .staff-name { grid-area: name; font-size: 16px; }
+  .m-screen-calendar .day-page .staff-time { grid-area: time; font-size: 13px; }
+  .m-screen-calendar .day-page .staff-name-btn .badge { grid-area: badge; align-self: center; justify-self: end; }
+  .m-screen-calendar .day-page .staff-action { padding: 0 16px 14px; }
+  .m-screen-calendar .day-page .staff .add-btn { height: 56px; margin-top: 10px; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); color: #379fef; font-size: 14px; font-weight: 700; }
+  .m-screen-calendar .day-page .staff .add-form { margin-top: 10px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); }
+}

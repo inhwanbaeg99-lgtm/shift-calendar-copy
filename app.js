@@ -724,8 +724,13 @@ function weekdayRow() {
 }
 
 // 날짜 박스: 그날 출근한 사람들
+// 모바일 관리자 날짜 상세: 직원 · 근무표 화면처럼 요약 카드 + 목록 카드
+const mobileDayPage = () => ADMIN_SITE && !isDesktop() && route().name === "day";
+const empSwatch = (emp) => `<span class="swatch big" style="background:${emp ? copyDisplayColor(emp.color) : "#dfe9f3"}"></span>`;
+
 function renderDateBox(date, { closable }) {
   const [, m, d] = date.split("-").map(Number);
+  const mobile = mobileDayPage();
   const wd = weekdayOf(date);
   const holiday = HOLIDAYS[date];
   const isRest = wd === 0 || Boolean(holiday);
@@ -736,7 +741,7 @@ function renderDateBox(date, { closable }) {
       (r) => `
         <li class="in-item${r.id === state.justAddedId ? " new" : ""}">
           <${ADMIN_SITE ? `button type="button" data-action="toggle-rec" data-id="${r.employeeId}"` : "div"} class="in-row">
-            <span class="in-name">${nameLabel(employeeById(r.employeeId), r)}</span>
+            ${mobile ? empSwatch(employeeById(r.employeeId)) : ""}<span class="in-name">${nameLabel(employeeById(r.employeeId), r)}</span>
             ${needsCheck(r) ? `<span class="in-time under">${formatTime(r.clockIn)} ~ 퇴근 확인 필요</span>` : noEndOpen(r) ? `<span class="in-time">${formatTime(r.clockIn)} ~ -</span>` : `<span class="in-time${diffClass(employeeById(r.employeeId), date, hoursBetween(r.clockIn, r.clockOut))}">${formatTime(r.clockIn)} ~ ${formatTime(r.clockOut)}</span>`}
           </${ADMIN_SITE ? "button" : "div"}>
           ${ADMIN_SITE && state.expandedRecId === r.employeeId ? `<div class="in-action">${renderRecordActions(r)}</div>` : ""}
@@ -744,6 +749,15 @@ function renderDateBox(date, { closable }) {
     )
     .join("");
 
+  if (mobile) return `
+    <section class="date-box m-date" aria-label="${m}월 ${d}일 출근 기록">
+      <div class="m-hero m-date-hero">
+        <small>${m}월 ${d}일 ${WEEKDAYS[wd]}요일${holiday ? ` · ${esc(holiday)}` : ""}</small>
+        <strong>${records.length ? `출근 ${records.length}명` : "아직 출근 전"}</strong>
+        <div class="m-hero-meta"><span>근무 예정 ${scheduledOn(date).length}명${records.length ? " · 이름을 눌러 시간을 고쳐요" : ""}</span></div>
+      </div>
+      ${records.length ? `<h2 class="m-day-heading">출근 기록</h2><ul class="in-list m-list">${rows}</ul>` : ""}
+    </section>`;
   return `
     <section class="date-box" aria-label="${m}월 ${d}일 출근 기록">
       <div class="date-box-head">
@@ -805,7 +819,7 @@ function renderStaffItem(emp, date) {
   return `
     <li class="staff-item${expanded ? " expanded" : ""}">
       <button type="button" class="staff-name-btn" data-action="toggle-staff" data-id="${emp.id}"${editable ? "" : " disabled"}>
-        <span class="staff-name">${nameLabel(emp, rec)}</span>
+        ${mobileDayPage() ? empSwatch(emp) : ""}<span class="staff-name">${nameLabel(emp, rec)}</span>
         ${needsCheck(rec) ? `<span class="badge check">퇴근 확인 필요</span>` : rec?.punchOut ? `<span class="badge done${rec.id === state.justAddedId ? " just" : ""}">퇴근 완료</span>` : done ? `<span class="badge done${rec.id === state.justAddedId ? " just" : ""}">출근 완료</span>` : ADMIN_SITE && date < today ? `<span class="badge none">기록 없음</span>` : ""}
         <span class="staff-time">${shiftLabel(emp, date)}</span>
       </button>
@@ -830,7 +844,7 @@ function renderTimeEditor(empId, start, end) {
 
 function renderAddExtra() {
   if (!state.adding) {
-    return `<button type="button" class="add-btn" data-action="open-add" aria-label="근무자 추가">+</button>`;
+    return `<button type="button" class="add-btn" data-action="open-add" aria-label="근무자 추가">${mobileDayPage() ? "+ 근무자 추가" : "+"}</button>`;
   }
   return `
     <form class="add-form" id="add-extra">
@@ -872,7 +886,7 @@ function renderStaff(date) {
 
   return `
     <section class="staff" aria-label="근무자">
-      <p class="staff-title">${isToday ? "오늘 근무자" : "근무 예정"}</p>
+      <p class="staff-title${mobileDayPage() ? " m-day-heading" : ""}">${isToday ? "오늘 근무자" : "근무 예정"}</p>
       <p class="sub">${sub}</p>
       <ul class="staff-list">
         ${overnight}
