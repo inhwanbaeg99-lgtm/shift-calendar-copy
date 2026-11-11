@@ -639,7 +639,7 @@ const state = {
 // ---------- 화면: 홈 ----------
 
 const storeName = () => (demoLoaded ? DEMO_NAME : state.storeName || APP_NAME);
-const BACK_TO_DEMO = `<a class="lock-link" href="#/employees">← 샘플 매장 둘러보기</a>`;
+const BACK_TO_DEMO = `<a class="lock-link lock-demo" href="#/employees">샘플 매장 둘러보기</a>`;
 const errorLine = () => (state.error ? `<p class="error">${esc(state.error)}</p>` : "");
 
 // 관리자 사이트 첫 화면: 로그인 / 매장 등록(회원가입) / 로그인했는데 매장이 없으면 매장 만들기
@@ -710,8 +710,7 @@ function renderLock() {
         ${errorLine()}
         ${state.notice ? `<p class="lock-note ok">${esc(state.notice)}</p>` : ""}
       </form>
-      <button type="button" class="lock-link" data-action="reset-password">비밀번호를 잊었어요</button>
-      <a class="lock-link" href="#/signup">처음이에요 · 매장 등록하기</a>
+      <a class="lock-link lock-cta" href="#/signup">처음이에요 · 매장 등록하기</a>
       ${BACK_TO_DEMO}
     </div>`;
 }
@@ -4333,7 +4332,10 @@ window.addEventListener("hashchange", () => {
   // 다른 탭으로 옮기면 맨 위부터, 출·퇴근으로 돌아오면 오늘 · 주간 화면부터
   if (lastTab !== null && tabOf(nextPage) !== lastTab) {
     window.scrollTo({ top: 0 });
-    if (tabOf(nextPage) === "calendar") Object.assign(state, { calDay: null, calRoute: null, monthOpen: false, yearView: false, activeYm: null, kcHeaderYm: null });
+    if (tabOf(nextPage) === "calendar") {
+      const [year, month] = todayDateString().split("-").map(Number);
+      Object.assign(state, { year, month, calDay: null, calRoute: null, monthOpen: false, yearView: false, activeYm: null, kcHeaderYm: null });
+    }
   }
   lastTab = tabOf(nextPage);
   const smoothDay = !isDesktop() && !reducedMotion() &&
@@ -5175,7 +5177,7 @@ function moveMonth(delta) {
   state.month = m < 1 ? 12 : m > 12 ? 1 : m;
 }
 
-// 달력은 좌우로 밀면 달이, 나머지 자리는 옆 탭으로 넘어간다
+// 직원용 달력은 좌우로 밀면 달이 넘어간다
 let swipe = null;
 app.addEventListener(
   "touchstart",
@@ -5195,18 +5197,8 @@ app.addEventListener(
     const dy = e.changedTouches[0].clientY - y;
     if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
     if (target.closest(".sheet, input, select, textarea, .sched-scroll, .ts-mobile, .m-tabbar, .kc-scroller, .tour-pop")) return;
-    if (target.closest(".cal-wrap")) {
-      moveMonth(dx < 0 ? 1 : -1);
-    } else {
-      // 나머지 자리: 하단 메뉴처럼 옆 탭으로 (왼쪽으로 밀면 오른쪽 탭). 직원 · 급여 상세 같은 상세 화면에서는 안 함
-      if (!ADMIN_SITE || tour) return;
-      const name = route().name === "day" ? "calendar" : route().name;
-      const next = M_TABS[M_TABS.indexOf(name) + (dx < 0 ? 1 : -1)];
-      if (!M_TABS.includes(name) || !next) return;
-      haptic(8);
-      navigateMobileTab(`#/${next}`);
-      return;
-    }
+    if (!target.closest(".cal-wrap")) return;
+    moveMonth(dx < 0 ? 1 : -1);
     haptic(8);
     render();
   },
@@ -6105,15 +6097,22 @@ function enterDemo() {
   }
   // 관리자 사이트는 로그인해서 내 매장을 열 때 연결한다 (그 전에는 샘플 매장)
   if (!ADMIN_SITE) watchStore();
+  let authSeen = false;
   cloud.auth.onAuthStateChanged(async (user) => {
     state.authReady = true;
+    const firstAuth = !authSeen;
+    authSeen = true;
     if (!ADMIN_SITE) {
       render();
       return;
     }
     // 매장 등록 중에는 createStore 가 매장을 연다
     if (state.busy === "signup") return;
-    if (!user) enterDemo();
+    if (!user) {
+      enterDemo();
+      // 앱을 처음 열면 로그인 화면부터 (샘플 매장은 로그인 화면에서 둘러보기로)
+      if (firstAuth && !["/login", "/signup"].includes(location.hash.replace(/^#/, ""))) location.replace("#/login");
+    }
     else {
       state.adminStore = null;
       watchPrivate(false);

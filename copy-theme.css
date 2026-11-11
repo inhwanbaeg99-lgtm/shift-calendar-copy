@@ -1072,3 +1072,10 @@ input, textarea { caret-color: #59B5FF; }
 }
 /* 알림은 글래시 박스(흐린 배경) 위에 선명하게 */
 .toast { z-index: 1300; }
+
+/* 로그인 화면: 매장 등록 · 샘플 매장 둘러보기 버튼을 잘 보이게 */
+.lock-page .lock-cta, .lock-page .lock-demo { display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: min(100%, 340px); min-height: 48px; padding: 0 16px; border-radius: 14px; font-size: 15px; font-weight: 700; text-decoration: none; }
+.lock-page .lock-cta { margin-top: 6px; border: 1px solid #59b5ff77; background: #ffffffb3; color: #379fef; }
+.lock-page .lock-demo { border: 0; background: #f1f6fb; color: var(--ink); }
+.lock-page .lock-cta:hover { background: #59b5ff14; color: #379fef; }
+.lock-page .lock-demo:hover { background: #e8eff6; color: var(--ink); }
