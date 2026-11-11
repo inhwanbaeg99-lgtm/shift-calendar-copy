@@ -664,8 +664,7 @@ function sixWeekChips() {
 
 const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
-// overflow: 첫 주 앞 · 마지막 주 뒤 빈칸에 지난달 · 다음 달 날짜를 흐리게 / weekdays: 요일 줄 포함
-function renderCalendar(period = state, { overflow = false, weekdays = true } = {}) {
+function renderCalendar(period = state) {
   const { year, month } = period;
   const { selectedDate } = state;
   const today = todayDateString();
@@ -673,18 +672,17 @@ function renderCalendar(period = state, { overflow = false, weekdays = true } = 
   const daysInMonth = new Date(year, month, 0).getDate();
 
   const cells = [];
-  for (let i = 0; i < startWeekday; i++) cells.push(overflow ? { other: ymd(new Date(year, month - 1, i - startWeekday + 1)) } : null);
+  for (let i = 0; i < startWeekday; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) {
     cells.push(`${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`);
   }
-  for (let d = 1; cells.length % 7; d++) cells.push(overflow ? { other: ymd(new Date(year, month, d)) } : null);
+  while (cells.length % 7) cells.push(null);
   const sixWeeks = cells.length > 35;
   const maxVisible = sixWeeks ? sixWeekChips() : MAX_VISIBLE;
 
   const body = cells
     .map((date, i) => {
       if (!date) return `<div class="empty-cell"></div>`;
-      if (date.other) return `<button type="button" class="cell other-month${i % 7 === 0 ? " sun" : ""}" data-date="${date.other}"><span class="cell-top"><span class="day-num">${Number(date.other.slice(-2))}</span></span></button>`;
       const entries = recordsOn(date);
       const holiday = HOLIDAYS[date];
       const isRest = i % 7 === 0 || Boolean(holiday);
@@ -716,7 +714,7 @@ function renderCalendar(period = state, { overflow = false, weekdays = true } = 
       <button type="button" class="round-btn" data-action="next-month" aria-label="다음 달">${ICON_NEXT}</button>
     </div>
     <div class="grid${sixWeeks ? " six-weeks" : ""}${state.monthDir ? ` slide-${state.monthDir}` : ""}">
-      ${weekdays ? weekdayRow() : ""}
+      ${weekdayRow()}
       ${body}
     </div>`;
 }
@@ -913,51 +911,74 @@ function renderHome() {
 function renderAdminCalendar() {
   if (isDesktop()) return renderAdminShell("calendar", `<div class="admin-cal">${renderCalendarCard()}</div>`, { center: true, wide: true });
   if (state.yearView) return renderAdminShell("calendar", renderYearView());
-  const page = (offset) => {
-    const d = new Date(state.year, state.month - 1 + offset, 1);
-    return `<section class="month-page${offset ? "" : " current"}" data-offset="${offset}" aria-label="${d.getFullYear()}년 ${d.getMonth() + 1}월">${renderCalendar({ year: d.getFullYear(), month: d.getMonth() + 1 }, { overflow: true, weekdays: false })}</section>`;
-  };
   return renderAdminShell("calendar", `
     <div class="admin-cal month-picker-calendar"><div class="card"><div class="cal-wrap">
       <div class="grid m-weekdays" aria-hidden="true">${weekdayRow()}</div>
-      <div class="month-pager">${[-1, 0, 1].map(page).join("")}</div>
+      <div class="month-scroll" data-active="${state.year}-${String(state.month).padStart(2, "0")}">${renderWeekStream()}</div>
     </div></div></div>`);
 }
 
-// 지금 보이는 달의 날짜 칸 (앞뒤 달 페이지에도 같은 날짜가 흐리게 있어서 지금 달에서 먼저 찾는다)
-const calCell = (date) => app.querySelector(`.month-page.current [data-date="${date}"]`) || app.querySelector(`[data-date="${date}"]`);
+// 모바일 달력: 앞뒤 1년 반의 주를 끊김 없이 한 줄로. 보고 있는 달만 진하고 나머지 날짜는 흐리다
+const WEEK_STREAM_MONTHS = 18;
+function renderWeekStream() {
+  const today = todayDateString();
+  const active = `${state.year}-${String(state.month).padStart(2, "0")}`;
+  const day = new Date(state.year, state.month - 1 - WEEK_STREAM_MONTHS, 1);
+  day.setDate(1 - day.getDay());
+  const end = new Date(state.year, state.month + WEEK_STREAM_MONTHS, 0);
+  let html = "";
+  while (day <= end) {
+    for (let i = 0; i < 7; i++) {
+      const date = ymd(day);
+      const holiday = HOLIDAYS[date];
+      const numClass = date === today ? "today" : i === 0 || holiday ? "rest" : "";
+      // 매달 1일이 든 주에서 멈추도록 그 주 첫 칸에 표시
+      const firstWeek = i === 0 && new Date(day.getFullYear(), day.getMonth(), day.getDate() + 6).getDate() <= 7;
+      html += `<button type="button" class="cell${date.slice(0, 7) === active ? "" : " dim"}${firstWeek ? " month-start" : ""}" data-date="${date}"><span class="cell-top"><span class="day-num ${numClass}">${day.getDate()}</span></span><span class="dot${recordsOn(date).length ? " on" : ""}"></span></button>`;
+      day.setDate(day.getDate() + 1);
+    }
+  }
+  return `<div class="grid">${html}</div>`;
+}
 
-// 위아래로 넘겨 한 달씩: 앞 · 지금 · 다음 달 세 장을 두고, 멈춘 자리가 앞이나 다음 달이면 그 달을 가운데로 다시 그린다
-function setupMonthPager() {
-  const pager = app.querySelector(".month-pager");
-  if (!pager) return;
-  pager.style.setProperty("--page-h", `${pager.clientHeight}px`);
-  pager.scrollTop = pager.clientHeight;
-  let timer = null, shown = 1;
-  // 지금 보이는 장 (0: 지난달, 1: 이번 달, 2: 다음 달). 크기를 아직 모르면 이번 달
-  const pageIndex = () => pager.clientHeight ? Math.max(0, Math.min(2, Math.round(pager.scrollTop / pager.clientHeight))) : 1;
-  const settle = () => {
-    const idx = pageIndex();
-    if (idx === 1) return;
-    moveMonth(idx - 1);
-    state.monthDir = null;
-    render();
+const calCell = (date) => app.querySelector(`[data-date="${date}"]`);
+
+// 위아래로 넘기면 한 달씩 멈추고, 멈춘 달의 날짜가 진해진다 (다음 달 날짜가 새로 생기지 않고 흐린 글씨가 그대로 진해짐)
+function setupMonthScroll() {
+  const box = app.querySelector(".month-scroll");
+  if (!box) return;
+  const rows = () => box.clientHeight / 6;
+  const align = () => {
+    if (!box.clientHeight) return;
+    box.style.setProperty("--row-h", `${rows()}px`);
+    const first = box.querySelector(`[data-date="${box.dataset.active}-01"]`);
+    if (first) box.scrollTop += first.getBoundingClientRect().top - box.getBoundingClientRect().top;
   };
-  pager.addEventListener("scroll", () => {
-    // 넘기는 중에도 상단 연월은 바로 바뀐다
-    const idx = pageIndex();
-    if (idx !== shown) {
-      shown = idx;
-      const d = new Date(state.year, state.month - 1 + idx - 1, 1);
+  box.alignMonth = align;
+  align();
+  let timer = null;
+  box.addEventListener("scroll", () => {
+    if (!box.clientHeight) return;
+    // 맨 위 줄 토요일이 속한 달 = 지금 보는 달
+    const row = Math.round(box.scrollTop / rows());
+    const sat = box.querySelector(".grid").children[row * 7 + 6];
+    const ym = sat?.dataset.date.slice(0, 7);
+    if (ym && ym !== box.dataset.active) {
+      box.dataset.active = ym;
+      [state.year, state.month] = ym.split("-").map(Number);
+      box.querySelectorAll(".cell").forEach(c => c.classList.toggle("dim", !c.dataset.date.startsWith(ym)));
       const title = app.querySelector(".m-month-title");
       const year = app.querySelector(".m-year-back span");
-      if (title) title.textContent = `${d.getMonth() + 1}월`;
-      if (year) year.textContent = `${d.getFullYear()}년`;
+      if (title) title.textContent = `${state.month}월`;
+      if (year) year.textContent = `${state.year}년`;
     }
+    // 끝에 가까워지면 지금 달을 가운데로 다시 그린다
     clearTimeout(timer);
-    timer = setTimeout(settle, 140);
+    timer = setTimeout(() => {
+      const left = box.scrollHeight - box.scrollTop - box.clientHeight;
+      if (box.scrollTop < box.clientHeight * 3 || left < box.clientHeight * 3) render();
+    }, 400);
   }, { passive: true });
-  if ("onscrollend" in window) pager.addEventListener("scrollend", () => { clearTimeout(timer); settle(); });
 }
 
 // 연도 화면: 해마다 열두 달을 작게. 달을 누르면 그 달로
@@ -3355,12 +3376,8 @@ function fitMobileAttendanceCalendar() {
     }
     // 본문 자체를 메뉴 위에서 끝내고, 그 안에서 날짜 줄을 균등 배분한다.
     grid.style.removeProperty("height");
-    // 크기가 바뀌면 달 넘기기 칸도 지금 달에 다시 맞춘다
-    const pager = app.querySelector(".month-pager");
-    if (pager?.clientHeight) {
-      pager.style.setProperty("--page-h", `${pager.clientHeight}px`);
-      if (Math.round(pager.scrollTop / pager.clientHeight) <= 1) pager.scrollTop = pager.clientHeight;
-    }
+    // 크기가 바뀌면 줄 높이를 다시 재고 지금 달에 맞춘다
+    app.querySelector(".month-scroll")?.alignMonth?.();
   });
 }
 function observeMobileCalendarLayout() {
@@ -3403,7 +3420,7 @@ function render() {
   if (period) fitPeriod(period);
   lockDemoFields();
   enhanceSelects();
-  setupMonthPager();
+  setupMonthScroll();
   observeMobileCalendarLayout();
   fitMobileAttendanceCalendar();
   placeNavPill();
@@ -3536,7 +3553,8 @@ function navigate(hash) {
 // 누른 날짜의 주가 그대로 위로 올라가 주간 날짜 줄이 되고, 고른 날은 파란 원, 그 밑에 상세가 떠오른다
 async function animateDateIntoDetails(date) {
   const week = dayWeekDates(date);
-  const grid = app.querySelector(".month-page.current .grid") || app.querySelector(".grid");
+  const grid = app.querySelector(".month-scroll .grid") || app.querySelector(".grid");
+  const view = (app.querySelector(".month-scroll") || grid).getBoundingClientRect();
   if (!grid) { render(); return; }
   // 달력 숫자들의 지금 자리를 기억해 둔다 (그 주는 위로 올라가고, 나머지는 겹쳐 그린 뒤 흐려지며 사라진다)
   const from = new Map();
@@ -3547,6 +3565,7 @@ async function animateDateIntoDetails(date) {
   const weekdays = Array.from(app.querySelectorAll(".m-weekdays .weekday, .grid .weekday"), el => el.getBoundingClientRect()).slice(0, 7);
   grid.querySelectorAll(".day-num, .dot.on").forEach(el => {
     const r = el.getBoundingClientRect();
+    if (r.bottom < view.top || r.top > view.bottom) return; // 화면 밖 주는 건너뜀
     const cell = el.closest("[data-date]");
     if (el.classList.contains("day-num") && week.includes(cell?.dataset.date)) {
       from.set(cell.dataset.date, { rect: r, font: parseFloat(getComputedStyle(el).fontSize) });
@@ -3562,6 +3581,7 @@ async function animateDateIntoDetails(date) {
       borderRadius: cs.borderRadius, boxShadow: cs.boxShadow,
     });
     copy.dataset.dir = r.top < weekTop ? "-1" : "1";
+    copy.style.opacity = copy.dataset.op = getComputedStyle(el.closest(".cell") || el).opacity;
     ghost.append(copy);
   });
   document.body.append(ghost);
@@ -3574,7 +3594,7 @@ async function animateDateIntoDetails(date) {
   const anims = [];
   try {
     Array.from(ghost.children).forEach(el => anims.push(el.animate(
-      [{ opacity: 1, transform: "none" }, { opacity: 0, transform: `translateY(${el.dataset.dir * 18}px)` }],
+      [{ opacity: Number(el.dataset.op), transform: "none" }, { opacity: 0, transform: `translateY(${el.dataset.dir * 18}px)` }],
       { duration: 260, easing: "ease-out", fill: "forwards" })));
     strip?.querySelectorAll(".day-week-cell").forEach(cell => {
       const num = cell.querySelector(".day-week-num");
@@ -3623,7 +3643,7 @@ function pickMonthFromYear(el) {
   state.yearView = false;
   state.monthDir = null;
   render();
-  const pager = app.querySelector(".month-pager");
+  const pager = app.querySelector(".month-scroll");
   if (!pager || reducedMotion()) return;
   const p = pager.getBoundingClientRect();
   pager.style.transformOrigin = "0 0";
