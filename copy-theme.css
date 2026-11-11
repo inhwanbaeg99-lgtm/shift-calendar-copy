@@ -452,3 +452,6 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
 .payslip .ps-sec { margin-bottom: 24px; }
 .payslip .ps-foot { flex-shrink: 0; padding-top: 20px; }
 .payslip .ps-foot .ps-store { margin-bottom: 0; }
+
+.pay-inline-frame { position: relative; width: 100%; overflow: hidden; }
+.m-pay-amount { overflow-anchor: none; }

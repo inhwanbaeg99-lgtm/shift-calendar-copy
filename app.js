@@ -1365,9 +1365,10 @@ function previewPayslipFromAmount(id) {
   if (!emp || !source || source.classList.contains("is-payslip")) return;
   const original = source.innerHTML;
   const amount = source.querySelector(":scope > strong");
-  const amountRange = document.createRange();
-  if (amount) amountRange.selectNodeContents(amount);
-  const amountRect = amount ? amountRange.getBoundingClientRect() : null;
+  const amountMarker = document.createElement("span");
+  if (amount) { amountMarker.textContent = amount.textContent; amountMarker.style.display = "inline-block"; amount.replaceChildren(amountMarker); }
+  const amountRect = amount ? amountMarker.getBoundingClientRect() : null;
+  const cardRect = source.getBoundingClientRect();
   const amountStyle = amount ? getComputedStyle(amount) : null;
   const amountFont = amountStyle ? {family:amountStyle.fontFamily,size:amountStyle.fontSize,weight:amountStyle.fontWeight,color:amountStyle.color} : null;
   const amountText = amount?.textContent;
@@ -1380,15 +1381,26 @@ function previewPayslipFromAmount(id) {
   const paper = source.querySelector(".pay-inline-paper");
   const cardStyle = getComputedStyle(source);
   const paperWidth = source.clientWidth - parseFloat(cardStyle.paddingLeft) - parseFloat(cardStyle.paddingRight);
-  paper.style.zoom = Math.min(1,paperWidth/794);
+  // CSS zoom과 Range 좌표를 섞지 않고 실제 transform 좌표계 하나로 통일한다.
+  const scale = Math.min(1,paperWidth/794);
+  const paperFrame = document.createElement("div");
+  paperFrame.className = "pay-inline-frame";
+  paper.before(paperFrame);
+  paperFrame.append(paper);
+  paper.style.transformOrigin = "top left";
+  paper.style.transform = `scale(${scale})`;
+  paperFrame.style.height = `${paper.offsetHeight*scale}px`;
   const expandedHeight = source.getBoundingClientRect().height;
   let clearAmountMorph = () => {};
   if (!reducedMotion()) {
     const target = source.querySelector(".ps-net strong");
     if (amountRect && amountFont && target && target.textContent.trim() === amountText.trim()) {
-      const range = document.createRange();
-      range.selectNodeContents(target);
-      const to = range.getBoundingClientRect();
+      const targetMarker = document.createElement("span");
+      targetMarker.textContent = target.textContent;
+      targetMarker.style.display = "inline-block";
+      target.replaceChildren(targetMarker);
+      const to = targetMarker.getBoundingClientRect();
+      const targetCardRect = source.getBoundingClientRect();
       const color = getComputedStyle(target).color;
       const svg = document.createElementNS("http://www.w3.org/2000/svg","svg");
       const text = document.createElementNS("http://www.w3.org/2000/svg","text");
@@ -1398,13 +1410,14 @@ function previewPayslipFromAmount(id) {
       text.textContent = amountText;
       Object.assign(text.style,{fontFamily:amountFont.family,fontSize:amountFont.size,fontWeight:amountFont.weight,fill:"currentColor"});
       svg.append(text);
-      document.body.append(svg);
+      source.append(svg);
+      svg.style.position = "absolute";
       const ink = text.getBBox();
       svg.setAttribute("viewBox",`${ink.x} ${ink.y} ${ink.width} ${ink.height}`);
-      const frame = rect => ({left:`${rect.left}px`,top:`${rect.top}px`,width:`${rect.width}px`,height:`${rect.height}px`});
-      Object.assign(svg.style,{...frame(amountRect),color:amountFont.color});
+      const frame = (rect,card) => ({left:`${rect.left-card.left-source.clientLeft}px`,top:`${rect.top-card.top-source.clientTop}px`,width:`${rect.width}px`,height:`${rect.height}px`});
+      Object.assign(svg.style,{...frame(amountRect,cardRect),color:amountFont.color});
       target.style.visibility="hidden";
-      const move=svg.animate([{...frame(amountRect),color:amountFont.color},{...frame(to),color}],{duration:540,easing:"cubic-bezier(.22,.75,.2,1)",fill:"forwards"});
+      const move=svg.animate([{...frame(amountRect,cardRect),color:amountFont.color},{...frame(to,targetCardRect),color}],{duration:540,easing:"cubic-bezier(.22,.75,.2,1)",fill:"forwards"});
       clearAmountMorph=()=>{target.style.removeProperty("visibility");svg.remove();};
       move.finished.then(clearAmountMorph,clearAmountMorph);
     }
