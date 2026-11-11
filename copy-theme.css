@@ -963,3 +963,8 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
 .m-pay-amount.is-payslip .pay-preview-toolbar { height: 48px; }
 /* 유리 카드: 더 불투명하게 */
 .m-blur-card { background: #ffffffd9; }
+/* 하단 메뉴: 고른 탭 박스는 꽉 차지 않게 둘레에 여백 (시안 A처럼), 색은 '+ 직원 추가'와 같게 */
+@media (max-width: 767px) {
+  .m-text-pill { inset: 5px auto 5px 5px; width: calc(25% - 10px); border-radius: 22px; background: #59b5ff20; box-shadow: none; transform: translateX(calc(var(--nav-position) * (100% + 10px))); }
+  .m-text-nav .m-tab.active { color: #379fef; }
+}
