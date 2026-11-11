@@ -1397,7 +1397,7 @@ function previewPayslipFromAmount(id) {
     if (amountRect && amountFont && target && target.textContent.trim() === amountText.trim()) {
       const targetMarker = document.createElement("span");
       targetMarker.textContent = target.textContent;
-      targetMarker.style.display = "inline-block";
+      Object.assign(targetMarker.style, {display:"inline-block",font:"inherit",color:"inherit",letterSpacing:"inherit"});
       target.replaceChildren(targetMarker);
       const to = targetMarker.getBoundingClientRect();
       const targetCardRect = source.getBoundingClientRect();
