@@ -951,3 +951,11 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
 .m-pay-amount .m-payslip-preview-btn { min-width: 72px; justify-content: center; text-align: center; }
 .m-blur-layer { background: #f4faff40; backdrop-filter: blur(2.5px); -webkit-backdrop-filter: blur(2.5px); }
 .m-blur-card { background: #ffffff8c; }
+/* 카드 안 버튼(엑셀 · 명세서 PDF · 근무표 항목 · 닫기)은 유리 느낌 없이 꽉 찬 색 */
+.m-blur-btn { background: #e8f4ff; }
+.m-ver { background: #ffffff; }
+.m-blur-close { background: #fff0fb; border-color: #ffb3e6; }
+/* 다운로드 버튼 둘 다 45px, 그림자 연하게 */
+.m-hero-dl, .pay-inline-download { width: 45px; height: 45px; box-shadow: 0 2px 8px #ff05bf12; }
+/* 로딩 화면 콕 로고: 하늘색 박스와 같은 그림자 */
+.logo.big { box-shadow: 0 10px 30px #59b5ff1f; }
