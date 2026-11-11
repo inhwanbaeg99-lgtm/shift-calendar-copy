@@ -1400,29 +1400,25 @@ function previewPayslipFromAmount(id) {
       Object.assign(targetMarker.style, {display:"inline-block",font:"inherit",color:"inherit",letterSpacing:"inherit"});
       target.replaceChildren(targetMarker);
       const to = targetMarker.getBoundingClientRect();
-      const targetCardRect = source.getBoundingClientRect();
       const color = getComputedStyle(target).color;
-      const svg = document.createElementNS("http://www.w3.org/2000/svg","svg");
-      const text = document.createElementNS("http://www.w3.org/2000/svg","text");
-      svg.setAttribute("class","pay-amount-morph");
-      svg.setAttribute("preserveAspectRatio","none");
-      svg.setAttribute("aria-hidden","true");
-      text.textContent = amountText;
-      Object.assign(text.style,{fontFamily:amountFont.family,fontSize:amountFont.size,fontWeight:amountFont.weight,fill:"currentColor"});
-      svg.append(text);
-      source.append(svg);
-      svg.style.position = "absolute";
-      const ink = text.getBBox();
-      svg.setAttribute("viewBox",`${ink.x} ${ink.y} ${ink.width} ${ink.height}`);
-      const frame = (rect,card) => ({left:`${rect.left-card.left-source.clientLeft}px`,top:`${rect.top-card.top-source.clientTop}px`,width:`${rect.width}px`,height:`${rect.height}px`});
-      Object.assign(svg.style,{...frame(amountRect,cardRect),color:amountFont.color});
-      target.style.visibility="hidden";
-      const move=svg.animate([{...frame(amountRect,cardRect),color:amountFont.color},{...frame(to,targetCardRect),color}],{duration:540,easing:"cubic-bezier(.22,.75,.2,1)",fill:"forwards"});
-      clearAmountMorph=()=>{target.style.removeProperty("visibility");svg.remove();};
-      move.finished.then(clearAmountMorph,clearAmountMorph);
+      // 별도 SVG를 실제 글자로 교체하지 않고, 명세서의 실제 숫자 자체를 이동한다.
+      const dx = (amountRect.left-to.left)/scale;
+      const dy = (amountRect.top-to.top)/scale;
+      const sx = amountRect.width/to.width;
+      const sy = amountRect.height/to.height;
+      targetMarker.style.transformOrigin = "top left";
+      paperFrame.style.overflow = "visible";
+      const move = targetMarker.animate([
+        {transform:`translate(${dx}px,${dy}px) scale(${sx},${sy})`,color:amountFont.color},
+        {transform:"translate(0px,0px) scale(1)",color}
+      ],{duration:540,easing:"cubic-bezier(.22,.75,.2,1)",fill:"both"});
+      clearAmountMorph=()=>{move.cancel();paperFrame.style.removeProperty("overflow");};
+      move.finished.then(()=>{paperFrame.style.removeProperty("overflow");move.cancel();},()=>{});
     }
     source.animate([{height:`${previousHeight}px`},{height:`${expandedHeight}px`}],{duration:460,easing:"cubic-bezier(.22,.75,.2,1)"});
-    paper.animate([{opacity:0},{opacity:1}],{duration:260,delay:220,fill:"both"});
+    paper.querySelectorAll(".payslip > :not(.ps-net), .ps-net > span").forEach(el =>
+      el.animate([{opacity:0},{opacity:1}],{duration:260,delay:220,fill:"both"})
+    );
   }
   source.querySelector(".pay-preview-close").addEventListener("click", () => {
     clearAmountMorph();
