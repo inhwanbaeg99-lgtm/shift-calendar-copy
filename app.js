@@ -557,6 +557,22 @@ const ICON_EYE_OFF = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none
 
 const svg = (size, d, stroke = 2.25) =>
   `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${stroke}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+// 클립보드 복사 (막혀 있으면 숨긴 입력칸을 골라 복사하는 옛 방식으로)
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    const ta = Object.assign(document.createElement("textarea"), { value: text, readOnly: true });
+    ta.style.cssText = "position:fixed;top:0;left:0;opacity:0;font-size:16px";
+    document.body.append(ta);
+    ta.select();
+    ta.setSelectionRange(0, text.length);
+    const ok = document.execCommand("copy");
+    ta.remove();
+    if (!ok) throw new Error("copy failed");
+  }
+}
+const ICON_COPY = svg(15, '<rect x="9" y="9" width="12" height="12" rx="2.5"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>', 2);
 const ICON_PREV = svg(22, '<path d="m15 18-6-6 6-6"/>');
 const ICON_NEXT = svg(22, '<path d="m9 18 6-6-6-6"/>');
 const ICON_CLOSE = svg(18, '<path d="M18 6 6 18M6 6l12 12"/>', 2.5);
@@ -1478,8 +1494,8 @@ function renderStaffLink() {
   return `
     <div class="staff-link">
       <div>
-        <p class="staff-link-title">직원용 달력 · 매장 코드 <b>${codeLabel()}</b></p>
-        <p class="staff-link-url">${esc(staffUrl())}</p>
+        <p class="staff-link-title">직원용 달력 · 매장 코드 <b>${codeLabel()}</b><button type="button" class="code-copy" data-action="copy-store-code" aria-label="매장 코드 복사" title="매장 코드 복사">${ICON_COPY}</button></p>
+        ${isDesktop() ? `<p class="staff-link-url">${esc(staffUrl())}</p>` : ""}
       </div>
       <div class="staff-link-actions">
         <a class="pill plain-dark" href="${esc(staffUrl())}" target="_blank" rel="noopener">열기</a>
@@ -1530,7 +1546,7 @@ function renderMobileShell(active, content) {
       ${route().name === "records" ? mobilePayrollMonthSelect() : ""}
       ${route().name === "day" && !mobileAdminCal() ? `<button type="button" class="m-day-back m-back-label" data-action="go-home" aria-label="달력으로 돌아가기">${ICON_PREV}<span>${Number(route().date.slice(5, 7))}월</span></button>` : ""}
       ${route().name === "pay-detail" ? `<a class="m-day-back" href="#/records" aria-label="급여 목록으로 돌아가기">${ICON_PREV}</a>` : ""}
-      ${route().name === "pay-detail" ? `<div class="m-pay-header-person">${mobilePayEmployeeSelect(route().id)}</div>` : `${["employees", "schedule"].includes(route().name) ? `<h1 class="m-page-title">${esc(storeName())}</h1>` : route().name === "employee-detail" && employeeById(route().id) ? `<a class="m-cal-back" href="#/employees" aria-label="직원 목록으로 돌아가기">${ICON_PREV}<span>${esc(employeeById(route().id).name)}</span></a>` : `<span class="m-store" aria-hidden="true"></span>`}<button type="button" class="m-tour" data-action="start-tour" aria-label="도움말" title="도움말">?</button>`}
+      ${route().name === "pay-detail" ? `<div class="m-pay-header-person">${mobilePayEmployeeSelect(route().id)}</div>` : `${["employees", "schedule"].includes(route().name) ? `<h1 class="m-page-title">${esc(storeName())}</h1>` : route().name === "employee-detail" && employeeById(route().id) ? `<a class="m-cal-back" href="#/employees" aria-label="직원 목록으로 돌아가기">${ICON_PREV}<span>${esc(employeeById(route().id).name)}</span></a>` : `<span class="m-store" aria-hidden="true"></span>`}${M_TABS.includes(route().name === "day" && mobileAdminCal() ? "calendar" : route().name) && !(state.yearView && route().name === "calendar") ? `<button type="button" class="m-tour" data-action="start-tour" aria-label="도움말" title="도움말">?</button>` : ""}`}
       ${route().name === "pay-detail" ? `<span class="m-pay-download-gap" aria-hidden="true"></span>` : demoLoaded ? `<a class="m-login" href="#/login" aria-label="로그인" title="로그인">${accountIcon}</a>` : `<a class="m-login" href="#/mypage" aria-label="마이페이지" title="마이페이지">${accountIcon}</a>`}
     </header>
     ${demoLoaded ? "" : `<div class="m-staff-shortcut">${staffCalLink("m-staff-link")}</div>`}
@@ -1821,12 +1837,25 @@ function renderScheduleHistory() {
               <b>${v.from ? `${v.from.replaceAll("-", ".")}부터` : "처음 근무표"}${v.now ? `<em>지금</em>` : v.upcoming ? `<em class="next">예정</em>` : ""}</b>
               <small>${versionSummary(v.from)}</small>
             </button>
+            ${state.historyView === v.key && v.from && versions.length > 1 ? `<button type="button" class="m-ver-del" data-action="delete-sched-version" data-key="${esc(v.key)}">삭제</button>` : ""}
             ${state.historyView === v.key ? `${renderVersionDetail(v.from)}<button type="button" class="m-blur-btn m-ver-load" data-action="load-sched-version" data-key="${esc(v.key)}"><b>이 근무표 불러오기</b><small>불러온 뒤 시작 날짜를 넣고 근무표 반영을 눌러요</small></button>` : ""}
           </div>`).join("")}</div>
         <button type="button" class="m-blur-close" data-action="close-sched-history" data-close>닫기</button>
       </div>
     </div>`;
 }
+// 근무표 하나 지우기: 직원마다 그 시작 날짜 기록을 빼고, 지금 근무표는 남은 것 중 마지막으로
+// (이미 찍힌 출근 기록은 건드리지 않는다)
+function deleteScheduleVersion(from) {
+  for (const e of store.employees) {
+    if (!e.weeklyHistory?.some((h) => h.from === from)) continue;
+    e.weeklyHistory = e.weeklyHistory.filter((h) => h.from !== from);
+    e.weekly = structuredClone(e.weeklyHistory.at(-1)?.weekly ?? e.weeklyBase ?? e.weekly);
+  }
+  state.historyView = null;
+  save();
+}
+
 // 고른 근무표를 초안으로: 지금 근무표와 다른 요일만 초안에 넣는다
 function loadScheduleVersion(key) {
   const v = scheduleVersions().find((x) => x.key === key);
@@ -2061,7 +2090,7 @@ function renderPaySheet(emp) {
   const recs = monthRecords(month, emp.id);
   // 수당을 그 자리에서 고치는 중이면 입력한 대로 미리 계산
   const editing = !isDesktop() && state.payslipId === emp.id;
-  const r = editing ? payrollRow(emp, month, recs, state.allowDraft, state.salDraft ? normalizeSalary(state.salDraft) : undefined) : payrollRow(emp, month, recs);
+  const r = editing ? payrollRow(emp, month, recs, allowWithNew(), state.salDraft ? normalizeSalary(state.salDraft) : undefined) : payrollRow(emp, month, recs);
   const line = (label, value, cls = "") => `<li class="${cls}"><span>${label}</span><b>${won(value)}</b></li>`;
   const days = recs
     .map((rec) => {
@@ -2549,26 +2578,30 @@ function refreshPayInline() {
   return true;
 }
 
+// 휴대폰 수당 창: 추가한 수당은 한 줄 글자로, 입력칸은 새 수당 하나만 (state.allowNew)
+const allowNewFilled = () => Boolean(state.allowNew && (state.allowNew.name || Number(state.allowNew.amount)));
+const allowWithNew = () => (allowNewFilled() ? [...state.allowDraft, state.allowNew] : state.allowDraft);
+function commitAllowNew() {
+  if (allowNewFilled()) state.allowDraft.push({ name: state.allowNew.name || "수당", amount: Number(state.allowNew.amount) || 0 });
+  state.allowNew = { name: "", amount: 0 };
+}
+
 // 휴대폰 급여 상세: 수당(월급제는 월급·공제액까지)을 그 자리에서 입력
 function renderAllowInline(empId, month) {
   const emp = employeeById(empId);
-  const r = payrollRow(emp, month, monthRecords(month, empId), state.allowDraft, state.salDraft ? normalizeSalary(state.salDraft) : undefined);
+  const r = payrollRow(emp, month, monthRecords(month, empId), allowWithNew(), state.salDraft ? normalizeSalary(state.salDraft) : undefined);
   return glassCard("close-payslip", `
     <div class="m-allow-inline">
       <p class="staff-title">${esc(emp.name)} · 수당</p>
       <p class="m-allow-net"><span>받을 금액</span><b>${r.net === null ? "공제액 입력 필요" : won(r.net)}</b></p>
       ${state.salDraft ? renderSalaryInputs(empId, month) : ""}
-      <div class="m-allow-rows">
-        ${state.allowDraft
-          .map(
-            (a, i) => `
-          <div class="m-allow-row">
-            <input class="field" value="${esc(a.name)}" placeholder="수당 이름" data-allow="name" data-index="${i}" aria-label="수당 이름" />
-            <button type="button" class="m-allow-del" data-action="remove-allowance" data-index="${i}" aria-label="삭제">삭제</button>
-            <label class="m-won"><input class="field money" type="text" inputmode="numeric" value="${a.amount ? Number(a.amount).toLocaleString() : ""}" placeholder="금액" data-allow="amount" data-index="${i}" aria-label="${esc(a.name || "수당")} 금액" /><span aria-hidden="true">원</span></label>
-          </div>`,
-          )
-          .join("")}
+      ${state.allowDraft.some((a) => a.name || Number(a.amount)) ? `<ul class="m-allow-lines">${state.allowDraft
+        .map((a, i) => (a.name || Number(a.amount) ? `
+        <li><span>${esc(a.name || "수당")}</span><b>${won(Number(a.amount) || 0)}</b><button type="button" class="m-allow-del" data-action="remove-allowance" data-index="${i}" aria-label="${esc(a.name || "수당")} 삭제">삭제</button></li>` : ""))
+        .join("")}</ul>` : ""}
+      <div class="m-allow-row m-allow-new">
+        <input class="field" value="${esc(state.allowNew?.name ?? "")}" placeholder="수당 이름" data-allow-new="name" aria-label="새 수당 이름" />
+        <label class="m-won"><input class="field money" type="text" inputmode="numeric" value="${state.allowNew?.amount ? Number(state.allowNew.amount).toLocaleString() : ""}" placeholder="금액" data-allow-new="amount" aria-label="새 수당 금액" /><span aria-hidden="true">원</span></label>
       </div>
       <button type="button" class="m-allowance-add" data-action="add-allowance"><span aria-hidden="true">＋</span> 수당 추가하기</button>
       <div class="action-row">
@@ -4730,6 +4763,16 @@ app.addEventListener("click", (e) => {
     case "view-sched-version":
       state.historyView = state.historyView === el.dataset.key ? null : el.dataset.key;
       break;
+    case "delete-sched-version": {
+      const from = el.dataset.key;
+      uiConfirm(`${from.replaceAll("-", ".")}부터 쓰는 근무표를 삭제할까요?\n이미 찍힌 출근 기록은 그대로예요.`, { ok: "삭제", danger: true }).then((yes) => {
+        if (!yes) return;
+        deleteScheduleVersion(from);
+        queueToast("근무표를 삭제했어요");
+        render();
+      });
+      return;
+    }
     case "load-sched-version":
       loadScheduleVersion(el.dataset.key);
       queueToast("불러왔어요. 시작 날짜를 넣고 근무표 반영을 눌러 주세요.");
@@ -4974,8 +5017,14 @@ app.addEventListener("click", (e) => {
     case "reset-password":
       resetPassword();
       return;
+    case "copy-store-code":
+      copyText(storeId ?? "").then(
+        () => showToast("매장 코드를 복사했어요", "ok"),
+        () => showToast("복사하지 못했어요. 코드를 직접 입력해 주세요."),
+      );
+      return;
     case "copy-staff-link":
-      navigator.clipboard?.writeText(staffUrl()).then(
+      copyText(staffUrl()).then(
         () => showToast("직원용 달력 주소를 복사했어요", "ok"),
         () => showToast("복사하지 못했어요. 주소를 길게 눌러 복사해주세요."),
       );
@@ -5084,15 +5133,17 @@ app.addEventListener("click", (e) => {
     case "open-payslip":
       state.modalEnter = true;
       openPayslipState(id);
-      // 휴대폰: 수당 추가하기 한 번에 빈 칸까지 연다 (키보드는 칸을 누를 때만)
-      if (!isDesktop()) state.allowDraft.push({ name: "", amount: 0 });
+      // 휴대폰: 새 수당 입력칸 하나를 연다 (키보드는 칸을 누를 때만)
+      state.allowNew = { name: "", amount: 0 };
       break;
     case "close-payslip":
+      state.allowNew = null;
       state.payslipId = null;
       state.allowDraft = null;
       state.salDraft = null;
       break;
     case "save-payslip":
+      if (!isDesktop()) commitAllowNew();
       setAllowances(state.payroll.month, state.payslipId, state.allowDraft.filter((a) => a.name || a.amount));
       if (state.salDraft) setSalary(state.payslipId, state.payroll.month, normalizeSalary(state.salDraft));
       save();
@@ -5100,8 +5151,14 @@ app.addEventListener("click", (e) => {
       state.payslipId = null;
       state.allowDraft = null;
       state.salDraft = null;
+      state.allowNew = null;
       break;
     case "add-allowance":
+      // 휴대폰: 입력한 새 수당을 목록(한 줄 글자)으로 옮기고 입력칸을 비운다
+      if (!isDesktop()) {
+        commitAllowNew();
+        break;
+      }
       state.allowDraft.push({ name: "", amount: 0 });
       break;
     case "remove-allowance":
@@ -5513,6 +5570,12 @@ app.addEventListener("change", (e) => {
     else state.salDraft[k] = v ?? 0;
     if (refreshPayInline()) return;
     render();
+    return;
+  }
+  if (t.dataset.allowNew && state.allowNew) {
+    state.allowNew[t.dataset.allowNew] = t.dataset.allowNew === "amount" ? parseMoney(t.value) : t.value.trim();
+    if (t.dataset.allowNew === "amount") t.value = state.allowNew.amount ? Number(state.allowNew.amount).toLocaleString() : "";
+    refreshPayInline();
     return;
   }
   if (t.dataset.allow) {

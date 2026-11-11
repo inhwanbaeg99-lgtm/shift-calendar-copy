@@ -1079,3 +1079,22 @@ input, textarea { caret-color: #59B5FF; }
 .lock-page .lock-demo { border: 0; background: #f1f6fb; color: var(--ink); }
 .lock-page .lock-cta:hover { background: #59b5ff14; color: #379fef; }
 .lock-page .lock-demo:hover { background: #e8eff6; color: var(--ink); }
+
+/* 근무표 목록: 펼친 근무표 오른쪽 위 삭제 (명세서 버튼 크기) */
+.m-ver { position: relative; }
+.m-ver.open .m-ver-head { padding-right: 96px; }
+.m-ver-del { position: absolute; top: 10px; right: 10px; z-index: 1; min-width: 72px; min-height: 36px; padding: 0 14px; border: 1px solid #ffb3e6; border-radius: 12px; background: #fff0fb; color: #FF05BF; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+
+/* 수당 창: 추가한 수당은 한 줄 글자 + 삭제 */
+@media (max-width: 767px) {
+  .m-allow-lines { display: flex; flex-direction: column; margin: 0 0 12px; padding: 0; list-style: none; }
+  .m-allow-lines li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 10px; min-height: 52px; border-bottom: 1px solid var(--line); }
+  .m-allow-lines li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); font-size: 15px; font-weight: 600; }
+  .m-allow-lines li b { color: var(--ink); font-size: 15px; }
+  .m-allow-lines .m-allow-del { height: 36px; min-width: 56px; padding: 0 12px; }
+  .m-allow-new { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
+}
+
+/* 매장 코드 옆 작은 복사 아이콘 */
+.code-copy { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; margin-left: 4px; padding: 0; vertical-align: middle; border: 0; border-radius: 8px; background: #59b5ff20; color: #379fef; cursor: pointer; }
+.code-copy:hover { background: #59b5ff33; }
