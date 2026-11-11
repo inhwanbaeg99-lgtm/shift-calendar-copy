@@ -475,3 +475,14 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
 .m-work-days[open] summary::after { transform: rotate(225deg); }
 .m-top .m-pay-download { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 0; border: 0; background: transparent; color: var(--ink); cursor: pointer; }
 .m-pay-download svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+@media (max-width: 767px) {
+  .m-hero.small { margin: 12px 0 12px; }
+}
+/* 날짜별 근무도 금액 카드와 같은 톤으로 */
+.m-work-days { margin: 12px 0; padding: 0 18px; border: 1px solid #59b5ff3d; border-radius: 18px; background: linear-gradient(125deg,#59b5ff2b,#FFFFFF 70%,#ff05bf0a); box-shadow: var(--shadow); }
+.m-work-days summary { padding: 16px 0; }
+.m-work-days-heading { display: flex; flex-direction: column; gap: 6px; }
+.m-work-days-heading > span { font-size: 14px; font-weight: 600; }
+.m-work-days-heading small { font-size: 13px; font-weight: 500; color: var(--ink-sub); }
+.m-work-days[open] .m-days-list { margin: 0 0 16px; padding-top: 8px; border-top: 1px solid var(--line); }
