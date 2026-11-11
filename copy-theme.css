@@ -1017,3 +1017,31 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
 .ui-back { background: #f4faff40; backdrop-filter: blur(2.5px); -webkit-backdrop-filter: blur(2.5px); }
 .ui-box { border: 1px solid #ffffffb3; border-radius: 22px; background: #ffffffd9; backdrop-filter: blur(18px) saturate(1.2); -webkit-backdrop-filter: blur(18px) saturate(1.2); box-shadow: 0 18px 50px #59b5ff33, inset 0 1px 0 #ffffffcc; }
 .ui-no { border: 1px solid #ffb3e6; background: #fff0fb; color: #FF05BF; }
+
+/* ---- 입력 커서 · 직원 추가 버튼 고정 · 수당 입력 · 추가 버튼 글래시 ---- */
+input, textarea { caret-color: #59B5FF; }
+@media (max-width: 767px) {
+  /* 알바/직원을 바꿔도 아래 버튼 자리가 그대로이게: 두 입력 묶음을 한 칸에 겹쳐 둔다 */
+  .m-add-emp-card .f-pay-area { display: grid; }
+  .m-add-emp-card .f-pay-area > * { display: block; grid-area: 1 / 1; min-width: 0; }
+  .m-add-emp-card .f-pay-area [hidden] { display: block; visibility: hidden; }
+  .m-add-emp-card .f-mgr-note { margin: 2px 0 0; font-size: 12px; line-height: 1.5; color: var(--ink-sub); }
+
+  .m-allow-rows { display: flex; flex-direction: column; gap: 12px; }
+  .m-allow-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+  .m-allow-row + .m-allow-row { padding-top: 12px; border-top: 1px solid var(--line); }
+  .m-allow-row .m-won { grid-column: 1 / -1; position: relative; display: block; }
+  .m-allow-row .field { width: 100%; }
+  .m-won .field { padding-right: 34px; text-align: right; }
+  .m-won span { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--ink); font-size: 15px; font-weight: 600; pointer-events: none; transition: opacity .15s; }
+  .m-won .field:placeholder-shown { text-align: left; }
+  .m-won .field:placeholder-shown + span { opacity: 0; }
+  .m-allow-del { height: 42px; padding: 0 12px; border: 0; background: none; color: #FF05BF; font: inherit; font-size: 14px; font-weight: 600; }
+  .m-allow-inline + .m-allowance-add { margin-top: 10px; }
+
+  html body .m-add:not(.m-share-btn), html body .m-screen-schedule .m-add-shift, html body .kc-content .staff .add-btn, html body .m-allowance-add {
+    border: 1px solid #ffffffcc; background: linear-gradient(180deg, #ffffffbf, #ffffff73); color: #379fef;
+    backdrop-filter: blur(14px) saturate(1.2); -webkit-backdrop-filter: blur(14px) saturate(1.2);
+    box-shadow: 0 6px 20px #59b5ff24, inset 0 1px 0 #ffffff;
+  }
+}

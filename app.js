@@ -647,7 +647,7 @@ function renderLock() {
   const title = `
     <div class="lock-brand">
       <span class="logo big" aria-hidden="true">콕</span>
-      <p class="lock-title">관리자</p>
+      <p class="lock-title">사장님</p>
     </div>`;
   if (!state.authReady || state.busy === "check") return `<div class="lock-page">${title}</div>`;
   if (!cloud) {
@@ -658,6 +658,14 @@ function renderLock() {
       </div>`;
   }
   const busy = Boolean(state.busy);
+  if (cloud.auth.currentUser && state.ownerFailed && state.busy !== "signup") {
+    return `
+      <div class="lock-page">
+        ${title}
+        <p class="error">매장 정보를 불러오지 못했어요. 인터넷 연결을 확인한 뒤 새로고침해주세요.</p>
+        <button type="button" class="lock-link" data-action="logout">다른 계정으로 로그인</button>
+      </div>`;
+  }
   if (cloud.auth.currentUser && state.busy !== "signup") {
     return `
       <div class="lock-page">
@@ -677,7 +685,7 @@ function renderLock() {
         ${title}
         <form class="lock-form" id="signup-form">
           <input id="signup-store" class="field" maxlength="40" autocomplete="organization" placeholder="매장 이름" aria-label="매장 이름" required />
-          <input id="login-email" class="field" type="email" autocomplete="username" placeholder="관리자 이메일" aria-label="관리자 이메일" required />
+          <input id="login-email" class="field" type="email" autocomplete="username" placeholder="사장님 이메일" aria-label="사장님 이메일" required />
           <div class="pw-wrap">
             <input id="login-password" class="field" type="password" minlength="6" autocomplete="new-password" placeholder="비밀번호 (6자 이상)" aria-label="비밀번호" required />
             <button type="button" class="pw-eye" data-action="toggle-password" aria-label="비밀번호 보기" aria-pressed="false">${ICON_EYE}</button>
@@ -1706,10 +1714,12 @@ function renderAddEmpSheet() {
       <input id="f-name" class="field" placeholder="홍길동" required autocomplete="off" />
       <label class="sheet-label" for="f-phone">전화번호 (선택)</label>
       <input id="f-phone" class="field phone" type="text" inputmode="numeric" placeholder="010-0000-0000" />
+      <div class="f-pay-area">
       <div class="f-wage-wrap">
         <label class="sheet-label" for="f-wage">시급(원)</label>
         <input id="f-wage" class="field money" type="text" inputmode="numeric" value="${formatMoney(DEFAULT_WAGE)}" required />
       </div>
+      <div class="f-mgr-group">
       <div class="f-mgr-wrap" hidden>
         <label class="sheet-label" for="f-salary">기본급 (월급)</label>
         <input id="f-salary" class="field money" type="text" inputmode="numeric" placeholder="2,000,000" />
@@ -1717,6 +1727,8 @@ function renderAddEmpSheet() {
         <input id="f-meal" class="field money" type="text" inputmode="numeric" placeholder="0 · 비과세, 월 20만 원까지" />
       </div>
       <p class="f-mgr-note" hidden>공제액(4대보험·근로소득세)은 추가한 뒤 급여 화면 <b>명세서</b>에서 입력해요.</p>
+      </div>
+      </div>
       <div class="sheet-actions">
         <button type="button" class="btn-ghost" data-action="close-sheet">취소</button>
         <button type="submit" class="btn-primary">추가</button>
@@ -2507,34 +2519,45 @@ function renderSalaryInputs(empId, month) {
     </div>`;
 }
 
+// 휴대폰 급여 상세에서 수당을 입력하는 중이면 금액 줄만 새로 그린다
+// (화면 전체를 다시 그리면 다음 칸을 누르는 순간 그 칸이 바뀌어 입력이 사라진다)
+function refreshPayInline() {
+  const box = document.querySelector(".m-pay-detail .m-allow-inline");
+  const emp = employeeById(state.payslipId);
+  if (!box || !emp || isDesktop()) return false;
+  const tpl = document.createElement("template");
+  tpl.innerHTML = renderPaySheet(emp);
+  for (const sel of [".m-lines", ".m-pay-amount strong", ".sheet-head small"]) {
+    const now = document.querySelector(`.m-pay-detail ${sel}`);
+    const fresh = tpl.content.querySelector(sel);
+    if (now && fresh) now.replaceWith(fresh);
+  }
+  return true;
+}
+
 // 휴대폰 급여 상세: 수당(월급제는 월급·공제액까지)을 그 자리에서 입력
 function renderAllowInline(empId, month) {
   return `
     <div class="m-allow-inline">
       ${state.salDraft ? renderSalaryInputs(empId, month) : ""}
-      ${renderAllowRows()}
+      <div class="m-allow-rows">
+        ${state.allowDraft
+          .map(
+            (a, i) => `
+          <div class="m-allow-row">
+            <input class="field" value="${esc(a.name)}" placeholder="수당 이름" data-allow="name" data-index="${i}" aria-label="수당 이름" />
+            <button type="button" class="m-allow-del" data-action="remove-allowance" data-index="${i}" aria-label="삭제">삭제</button>
+            <label class="m-won"><input class="field money" type="text" inputmode="numeric" value="${a.amount ? Number(a.amount).toLocaleString() : ""}" placeholder="금액" data-allow="amount" data-index="${i}" aria-label="${esc(a.name || "수당")} 금액" /><span aria-hidden="true">원</span></label>
+          </div>`,
+          )
+          .join("")}
+      </div>
       <div class="action-row">
         <button type="button" class="btn-ghost" data-action="close-payslip">취소</button>
         <button type="button" class="btn-primary" data-action="save-payslip">저장</button>
       </div>
-    </div>`;
-}
-
-function renderAllowRows() {
-  return `
-          <div class="ps-allow">
-            ${state.allowDraft
-              .map(
-                (a, i) => `
-              <div class="ps-allow-row">
-                <input class="field" value="${esc(a.name)}" placeholder="수당 이름" data-allow="name" data-index="${i}" aria-label="수당 이름" />
-                <input class="field ps-allow-amount money" type="text" inputmode="numeric" value="${a.amount ? Number(a.amount).toLocaleString() : ""}" placeholder="0" data-allow="amount" data-index="${i}" aria-label="${esc(a.name || "수당")} 금액" />
-                <button type="button" class="danger" data-action="remove-allowance" data-index="${i}" aria-label="삭제">삭제</button>
-              </div>`,
-              )
-              .join("")}
-            <button type="button" class="add-btn" data-action="add-allowance">+ 수당 추가</button>
-          </div>`;
+    </div>
+    <button type="button" class="m-allowance-add" data-action="add-allowance"><span aria-hidden="true">＋</span> 수당 추가하기</button>`;
 }
 
 function renderPayslipModal() {
@@ -3857,7 +3880,7 @@ function route() {
 const homeHash = () => (ADMIN_SITE ? "#/calendar" : "#/");
 
 // 다시 그릴 때 입력 중이던 시간 칸 값을 지키는 칸들 (편집이 끝나면 칸이 사라지므로 그대로 남지 않는다)
-const KEEP_FIELDS = ["edit-start", "edit-end", "extra-name", "extra-start", "extra-end", "change-reason"];
+const KEEP_FIELDS = ["login-email", "login-password", "signup-store", "store-name", "edit-start", "edit-end", "extra-name", "extra-start", "extra-end", "change-reason"];
 
 let calendarFitFrame = 0;
 let calendarFitObserver = null;
@@ -4298,7 +4321,8 @@ async function login() {
     // 창을 닫으면 로그아웃 (매장 공용 컴퓨터)
     await cloud.auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
     await cloud.auth.signInWithEmailAndPassword(email, password);
-    state.busy = null;
+    // 매장 확인(busy "check")은 로그인 감지 쪽이 끝낸다. 여기서 지우면 "등록된 매장이 없어요"가 잠깐 뜬다
+    if (state.busy === "login") state.busy = null;
     location.hash = "#/employees";
   } catch (err) {
     state.busy = null;
@@ -5416,12 +5440,15 @@ app.addEventListener("change", (e) => {
     const v = t.value.replace(/\D/g, "") === "" ? null : parseMoney(t.value);
     if (sub) state.salDraft.ded[sub] = v;
     else state.salDraft[k] = v ?? 0;
+    if (refreshPayInline()) return;
     render();
     return;
   }
   if (t.dataset.allow) {
     const item = state.allowDraft[Number(t.dataset.index)];
     item[t.dataset.allow] = t.dataset.allow === "amount" ? parseMoney(t.value) : t.value.trim();
+    if (t.dataset.allow === "amount" && !isDesktop()) t.value = item.amount ? Number(item.amount).toLocaleString() : "";
+    if (refreshPayInline()) return;
     render();
     return;
   }
@@ -6013,13 +6040,21 @@ function enterDemo() {
       watchPrivate(false);
       state.busy = "check";
       render();
-      try {
-        const code = (await cloud.db.ref(`owners/${user.uid}`).once("value")).val();
-        if (code && cloud.auth.currentUser?.uid === user.uid) openStore(code, true);
-      } catch (err) {
-        console.warn("매장 정보를 읽지 못했어요", err);
+      state.ownerFailed = false;
+      // 로그인 직후엔 권한이 늦게 붙어 읽기가 실패할 수 있어 몇 번 다시 읽는다
+      for (let i = 0; i < 3; i++) {
+        try {
+          const code = (await cloud.db.ref(`owners/${user.uid}`).once("value")).val();
+          if (code && cloud.auth.currentUser?.uid === user.uid) openStore(code, true);
+          state.ownerFailed = false;
+          break;
+        } catch (err) {
+          console.warn("매장 정보를 읽지 못했어요", err);
+          state.ownerFailed = true;
+          await new Promise((r) => setTimeout(r, 700 * (i + 1)));
+        }
       }
-      if (state.busy === "check") state.busy = null;
+      state.busy = null;
     }
     render();
   });
