@@ -1400,20 +1400,39 @@ function previewPayslipFromAmount(id) {
       Object.assign(targetMarker.style, {display:"inline-block",font:"inherit",color:"inherit",letterSpacing:"inherit"});
       target.replaceChildren(targetMarker);
       const to = targetMarker.getBoundingClientRect();
-      const color = getComputedStyle(target).color;
-      // 별도 SVG를 실제 글자로 교체하지 않고, 명세서의 실제 숫자 자체를 이동한다.
-      const dx = (amountRect.left-to.left)/scale;
-      const dy = (amountRect.top-to.top)/scale;
-      const sx = amountRect.width/to.width;
-      const sy = amountRect.height/to.height;
-      targetMarker.style.transformOrigin = "top left";
-      paperFrame.style.overflow = "visible";
+      const targetStyle = getComputedStyle(target);
+      const color = targetStyle.color;
+      const destination = source.getBoundingClientRect();
+      // 숫자는 축소 종이 밖의 독립 레이어에서 계속 보이며 이동한다.
+      // 끝나면 같은 DOM 숫자를 명세서 자리로 옮겨 페이드/글자 교체를 피한다.
+      target.textContent = amountText;
+      target.style.visibility = "hidden";
+      source.append(targetMarker);
+      const left = to.left-destination.left-source.clientLeft;
+      const top = to.top-destination.top-source.clientTop;
+      Object.assign(targetMarker.style, {
+        position:"absolute",left:`${left}px`,top:`${top}px`,zIndex:"5",pointerEvents:"none",
+        fontFamily:targetStyle.fontFamily,fontSize:`${parseFloat(targetStyle.fontSize)*scale}px`,
+        fontWeight:targetStyle.fontWeight,lineHeight:`${to.height}px`,color,
+        letterSpacing:"0px",whiteSpace:"nowrap",transformOrigin:"top left"
+      });
+      const dx = amountRect.left-cardRect.left-source.clientLeft-left;
+      const dy = amountRect.top-cardRect.top-source.clientTop-top;
       const move = targetMarker.animate([
-        {transform:`translate(${dx}px,${dy}px) scale(${sx},${sy})`,color:amountFont.color},
+        {transform:`translate(${dx}px,${dy}px) scale(${amountRect.width/to.width},${amountRect.height/to.height})`,color:amountFont.color},
         {transform:"translate(0px,0px) scale(1)",color}
-      ],{duration:540,easing:"cubic-bezier(.22,.75,.2,1)",fill:"both"});
-      clearAmountMorph=()=>{move.cancel();paperFrame.style.removeProperty("overflow");};
-      move.finished.then(()=>{paperFrame.style.removeProperty("overflow");move.cancel();},()=>{});
+      ],{duration:600,easing:"cubic-bezier(.22,.75,.2,1)",fill:"both"});
+      let settled=false;
+      clearAmountMorph=()=>{
+        if(settled) return;
+        settled=true;
+        target.replaceChildren(targetMarker);
+        targetMarker.removeAttribute("style");
+        Object.assign(targetMarker.style,{display:"inline-block",font:"inherit",color:"inherit",letterSpacing:"inherit"});
+        target.style.removeProperty("visibility");
+        move.cancel();
+      };
+      move.finished.then(clearAmountMorph,()=>{});
     }
     source.animate([{height:`${previousHeight}px`},{height:`${expandedHeight}px`}],{duration:460,easing:"cubic-bezier(.22,.75,.2,1)"});
     paper.querySelectorAll(".payslip > :not(.ps-net), .ps-net > span").forEach(el =>
