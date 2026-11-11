@@ -937,3 +937,17 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
   .kc-content .m-in-boxes .in-name, .kc-content .m-in-boxes .in-time { color: #379fef; }
   .kc-content .m-in-boxes .in-time.under { color: var(--red); }
 }
+/* 급여 합계 박스 다운로드 = 명세서 다운로드와 같은 크기 · 분홍 */
+.m-hero-dl { top: 10px; right: 10px; width: 46px; height: 46px; border: 1px solid #ff05bf55; border-radius: 14px; background: #fff0fbbf; color: #FF05BF; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 2px 10px #ff05bf1f; }
+.m-hero-dl svg { width: 22px; height: 22px; }
+/* 흐린 화면 위 카드: 흰 박스 대신 유리 느낌, 뒤 흐림은 약하게 */
+.m-blur-layer { background: #f4faff59; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+.m-blur-card { border: 1px solid #ffffffb3; background: #ffffffa6; backdrop-filter: blur(18px) saturate(1.2); -webkit-backdrop-filter: blur(18px) saturate(1.2); box-shadow: 0 18px 50px #59b5ff33, inset 0 1px 0 #ffffffcc; }
+.m-blur-title { font-size: 22px; letter-spacing: -.02em; }
+.m-ver { background: #ffffffb3; }
+/* 카드의 닫기: 명세서 닫기와 같은 분홍 */
+.m-blur-close { border: 1px solid #ff05bf55; background: #fff0fb; color: #FF05BF; }
+/* 펼친 명세서 닫기 = 명세서 버튼과 같은 가로 크기 */
+.m-pay-amount .m-payslip-preview-btn { min-width: 72px; justify-content: center; text-align: center; }
+.m-blur-layer { background: #f4faff40; backdrop-filter: blur(2.5px); -webkit-backdrop-filter: blur(2.5px); }
+.m-blur-card { background: #ffffff8c; }

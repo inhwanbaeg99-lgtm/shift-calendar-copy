@@ -1894,7 +1894,7 @@ function renderRecordsMobile() {
     ${state.exportsOpen ? `
     <div class="m-blur-layer" data-action="close-exports">
       <div class="m-blur-card" role="dialog" aria-modal="true" aria-label="엑셀 · 명세서 받기">
-        <p class="m-blur-title">${y}년 ${m}월 급여 받기</p>
+        <p class="m-blur-title">${y}년 ${m}월</p>
         <button type="button" class="m-blur-btn" data-action="export-ledger"${rows.length ? "" : " disabled"}><b>엑셀 파일</b><small>세무사에게 보낼 급여대장</small></button>
         <button type="button" class="m-blur-btn" data-action="payslip-pdf-all"${rows.length ? "" : " disabled"}><b>명세서 PDF 전체</b><small>${rows.length}명 명세서를 한 번에</small></button>
         <button type="button" class="m-blur-close" data-action="close-exports" data-close>닫기</button>
