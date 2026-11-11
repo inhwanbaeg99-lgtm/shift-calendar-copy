@@ -930,9 +930,22 @@ function renderTimeEditor(empId, start, end) {
 }
 
 function renderAddExtra() {
-  if (!state.adding) {
-    return `<button type="button" class="add-btn" data-action="open-add" aria-label="근무자 추가">${mobileDayPage() ? "+ 근무자 추가" : "+"}</button>`;
-  }
+  const button = `<button type="button" class="add-btn" data-action="open-add" aria-label="근무자 추가">${mobileDayPage() ? "+ 근무자 추가" : "+"}</button>`;
+  if (!state.adding) return button;
+  // 휴대폰: 누르면 글래시 박스로
+  if (!isDesktop()) return button + glassCard("cancel-add", `<p class="staff-title">근무자 추가</p>${renderAddExtraForm()}`);
+  return renderAddExtraForm();
+}
+
+// 글래시 박스: 그린 뒤 #app 바로 아래로 옮긴다 (움직이는 부모 안에서도 화면 가운데에 고정되게)
+function glassCard(close, body, cls = "") {
+  return `
+    <div class="m-blur-layer" data-action="${close}" data-portal>
+      <div class="m-blur-card m-glass-form ${cls}" data-stop role="dialog" aria-modal="true">${body}</div>
+    </div>`;
+}
+
+function renderAddExtraForm() {
   return `
     <form class="add-form" id="add-extra">
       <input id="extra-name" class="field" placeholder="이름" required autocomplete="off" />
@@ -1869,7 +1882,8 @@ function renderScheduleMobile() {
     </div>
     <h2 class="m-day-heading">${WEEKDAYS[wd]}요일 근무자 <span>${count(wd)}명</span></h2>
     <div class="m-shifts m-list${state.dayListEnter ? " enter" : ""}" id="sched-day-list">${renderDayShifts()}</div>
-    ${state.slotEdit && !state.slotEdit.empId ? `<div class="m-slot-inline">${renderSlotPanel()}</div>` : `<button type="button" class="m-add-shift" data-action="edit-slot" data-wd="${wd}" data-start="540">+ ${WEEKDAYS[wd]}요일 근무자 추가</button>`}
+    <button type="button" class="m-add-shift" data-action="edit-slot" data-wd="${wd}" data-start="540">+ ${WEEKDAYS[wd]}요일 근무자 추가</button>
+    ${state.slotEdit && !state.slotEdit.empId ? glassCard("cancel-slot", renderSlotPanel()) : ""}
     <div id="sched-status">${renderSchedStatus()}</div>
     <div class="m-btns m-pay-exports m-savebar">
       <button type="button" class="btn-ghost" data-action="open-sched-history">목록</button>
@@ -2075,7 +2089,8 @@ function renderPaySheet(emp) {
           : `${line("소득세", r.income)}${line("지방소득세", r.local)}`
       }
     </ul>
-    ${editing ? renderAllowInline(emp.id, month) : `<button type="button" class="m-allowance-add" data-action="open-payslip" data-id="${emp.id}"><span aria-hidden="true">＋</span> 수당 추가하기</button>`}
+    <button type="button" class="m-allowance-add" data-action="open-payslip" data-id="${emp.id}"><span aria-hidden="true">＋</span> 수당 추가하기</button>
+    ${editing ? renderAllowInline(emp.id, month) : ""}
     <details class="m-work-days"><summary><span class="m-work-days-heading"><span>날짜별 근무</span><strong>${hrs(r.hours)}</strong></span><span class="m-work-chevron" aria-hidden="true">${DD_CHEVRON}</span></summary><ul class="m-days-list">${days || `<li><span>근무 기록이 없어요</span></li>`}</ul>
     <button type="button" class="btn-ghost m-share" data-action="share-ts-image" data-id="${emp.id}">공유하기</button></details>
 `;
@@ -2522,13 +2537,13 @@ function renderSalaryInputs(empId, month) {
 // 휴대폰 급여 상세에서 수당을 입력하는 중이면 금액 줄만 새로 그린다
 // (화면 전체를 다시 그리면 다음 칸을 누르는 순간 그 칸이 바뀌어 입력이 사라진다)
 function refreshPayInline() {
-  const box = document.querySelector(".m-pay-detail .m-allow-inline");
+  const box = document.querySelector(".m-allow-inline");
   const emp = employeeById(state.payslipId);
   if (!box || !emp || isDesktop()) return false;
   const tpl = document.createElement("template");
   tpl.innerHTML = renderPaySheet(emp);
-  for (const sel of [".m-lines", ".m-pay-amount strong", ".sheet-head small"]) {
-    const now = document.querySelector(`.m-pay-detail ${sel}`);
+  for (const sel of [".m-lines", ".m-pay-amount strong", ".sheet-head small", ".m-allow-net"]) {
+    const now = document.querySelector(sel.startsWith(".m-allow") ? sel : `.m-pay-detail ${sel}`);
     const fresh = tpl.content.querySelector(sel);
     if (now && fresh) now.replaceWith(fresh);
   }
@@ -2537,8 +2552,12 @@ function refreshPayInline() {
 
 // 휴대폰 급여 상세: 수당(월급제는 월급·공제액까지)을 그 자리에서 입력
 function renderAllowInline(empId, month) {
-  return `
+  const emp = employeeById(empId);
+  const r = payrollRow(emp, month, monthRecords(month, empId), state.allowDraft, state.salDraft ? normalizeSalary(state.salDraft) : undefined);
+  return glassCard("close-payslip", `
     <div class="m-allow-inline">
+      <p class="staff-title">${esc(emp.name)} · 수당</p>
+      <p class="m-allow-net"><span>받을 금액</span><b>${r.net === null ? "공제액 입력 필요" : won(r.net)}</b></p>
       ${state.salDraft ? renderSalaryInputs(empId, month) : ""}
       <div class="m-allow-rows">
         ${state.allowDraft
@@ -2552,12 +2571,12 @@ function renderAllowInline(empId, month) {
           )
           .join("")}
       </div>
+      <button type="button" class="m-allowance-add" data-action="add-allowance"><span aria-hidden="true">＋</span> 수당 추가하기</button>
       <div class="action-row">
         <button type="button" class="btn-ghost" data-action="close-payslip">취소</button>
         <button type="button" class="btn-primary" data-action="save-payslip">저장</button>
       </div>
-    </div>
-    <button type="button" class="m-allowance-add" data-action="add-allowance"><span aria-hidden="true">＋</span> 수당 추가하기</button>`;
+    </div>`, "m-allow-card");
 }
 
 function renderPayslipModal() {
@@ -2773,10 +2792,17 @@ const uiConfirm = (message, options = {}) => uiDialog({ message, cancel: "취소
 
 async function withBusy(button, text, task) {
   const original = button.innerHTML;
-  const iconOnly = !button.textContent.trim();
+  // 아이콘 버튼과 엑셀·PDF 받기는 "만드는 중…" 글자 대신 도는 아이콘만 (버튼 크기는 그대로)
+  const spinOnly = !button.textContent.trim() || /export|pdf/i.test(button.dataset.action ?? "");
+  const size = [button.style.width, button.style.height];
   button.disabled = true;
   button.classList.add("is-busy");
-  if (iconOnly) button.innerHTML = `<span class="busy-spin" aria-hidden="true"></span>`;
+  if (spinOnly) {
+    const { width, height } = button.getBoundingClientRect();
+    button.style.width = `${width}px`;
+    button.style.height = `${height}px`;
+    button.innerHTML = `<span class="busy-spin" aria-hidden="true"></span>`;
+  }
   else button.textContent = text;
   try {
     await task();
@@ -2786,6 +2812,7 @@ async function withBusy(button, text, task) {
     button.disabled = false;
     button.classList.remove("is-busy");
     button.innerHTML = original;
+    if (spinOnly) [button.style.width, button.style.height] = size;
   }
 }
 
@@ -3329,7 +3356,8 @@ function schedHelp() {
 // (패널이 표 아래에 있는 좁은 화면에서 눌러도 안 보이는 일이 없게)
 function revealSlotPanel() {
   if (!isDesktop()) {
-    document.getElementById(state.slotEdit?.empId || state.slotEdit?.fixedEmp ? "slot-start" : "slot-emp")?.focus({ preventScroll: true });
+    // 직원 선택 칸에 커서를 두면 아이폰 기본 선택 목록이 떠 버린다 → 시간 칸일 때만
+    if (state.slotEdit?.empId || state.slotEdit?.fixedEmp) document.getElementById("slot-start")?.focus({ preventScroll: true });
     return;
   }
   const panel = document.getElementById("tl-edit");
@@ -3880,6 +3908,7 @@ function route() {
 const homeHash = () => (ADMIN_SITE ? "#/calendar" : "#/");
 
 // 다시 그릴 때 입력 중이던 시간 칸 값을 지키는 칸들 (편집이 끝나면 칸이 사라지므로 그대로 남지 않는다)
+let lastRouteName = "";
 const KEEP_FIELDS = ["login-email", "login-password", "signup-store", "store-name", "edit-start", "edit-end", "extra-name", "extra-start", "extra-end", "change-reason"];
 
 let calendarFitFrame = 0;
@@ -3953,7 +3982,11 @@ function render() {
     const el = document.getElementById(id);
     if (el && !el.value) el.value = value;
   }
+  for (const layer of app.querySelectorAll("[data-portal]")) app.append(layer);
   if (KEEP_FIELDS.includes(focusedId)) document.getElementById(focusedId)?.focus({ preventScroll: true });
+  // 로그인 화면에서 넘어오면 맨 위부터 (키보드 때문에 내려간 스크롤이 남지 않게)
+  if (lastRouteName === "lock" && r.name !== "lock") window.scrollTo(0, 0);
+  lastRouteName = r.name;
 
   const period = document.querySelector(".sc-period");
   if (period) fitPeriod(period);

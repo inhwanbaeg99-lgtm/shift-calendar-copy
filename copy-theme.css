@@ -1039,9 +1039,34 @@ input, textarea { caret-color: #59B5FF; }
   .m-allow-del { height: 42px; padding: 0 12px; border: 0; background: none; color: #FF05BF; font: inherit; font-size: 14px; font-weight: 600; }
   .m-allow-inline + .m-allowance-add { margin-top: 10px; }
 
-  html body .m-add:not(.m-share-btn), html body .m-screen-schedule .m-add-shift, html body .kc-content .staff .add-btn, html body .m-allowance-add {
-    border: 1px solid #ffffffcc; background: linear-gradient(180deg, #ffffffbf, #ffffff73); color: #379fef;
-    backdrop-filter: blur(14px) saturate(1.2); -webkit-backdrop-filter: blur(14px) saturate(1.2);
-    box-shadow: 0 6px 20px #59b5ff24, inset 0 1px 0 #ffffff;
-  }
+}
+
+/* ---- 추가 창(근무자 추가 · 출퇴근 근무자 추가 · 수당)은 글래시 박스 ---- */
+@media (max-width: 767px) {
+  .m-glass-form { overflow: visible; gap: 0; }
+  .m-glass-form .staff-title { margin: 0 0 12px; font-size: 18px; font-weight: 700; letter-spacing: -.02em; color: var(--ink); }
+  .m-glass-form .slot-form, .m-glass-form .add-form { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; border: 0; background: none; box-shadow: none; }
+  .m-glass-form .slot-form .staff-title { margin-bottom: 2px; }
+  .m-glass-form .field { width: 100%; min-height: 44px; border: 1px solid #cfe3f5; border-radius: 12px; background: #f1f7fd; color: var(--ink); font-size: 16px; }
+  .m-glass-form .field:focus { border-color: #59B5FF; background: #fff; outline: none; box-shadow: 0 0 0 3px #59b5ff26; }
+  .m-glass-form .edit-row { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--ink-sub); }
+  .m-glass-form .edit-row .field { flex: 1; min-width: 0; text-align: center; }
+  .m-glass-form .action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+  .m-glass-form .action-row button { min-height: 46px; border-radius: 14px; }
+  .m-glass-form .btn-ghost { border: 1px solid #ffb3e6; background: #fff0fb; color: #FF05BF; }
+  .m-glass-form .dd { width: 100%; }
+  .m-glass-form .dd-btn { width: 100%; min-height: 44px; padding: 0 12px; border: 1px solid #cfe3f5; border-radius: 12px; background: #f1f7fd; color: var(--ink); justify-content: space-between; }
+  .m-glass-form .dd-list { left: 0; right: 0; min-width: 100%; z-index: 5; }
+  .m-glass-form .error { margin: 0; }
+  .m-allow-card { overflow-y: auto; }
+  .m-allow-card .m-allow-inline { margin: 0; padding: 0; border: 0; background: none; animation: none; }
+  .m-allow-net { display: flex; justify-content: space-between; align-items: baseline; margin: -4px 0 14px; color: var(--ink-sub); font-size: 13px; }
+  .m-allow-net b { color: var(--ink); font-size: 18px; }
+  .m-allow-card .m-allowance-add { margin: 12px 0 12px; }
+  .m-allow-card .action-row { margin-top: 0; }
+  .m-blur-btn.is-busy { display: flex; align-items: center; justify-content: center; }
+
+  /* 로그인: 화면 높이에 딱 맞게, 조금 위쪽에 */
+  .lock-page { min-height: 100svh; justify-content: flex-start; padding: max(14vh, 72px) 20px 24px; gap: 12px; }
+  .lock-brand { gap: 10px; margin-bottom: 6px; }
 }
