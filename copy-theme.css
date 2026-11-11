@@ -765,9 +765,8 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
   .kc-content .edit-row { gap: 8px; margin-bottom: 10px; }
   .kc-content .add-form .field + .field, .kc-content .add-form .edit-row { margin-top: 8px; }
 }
-/* 근무자 박스 안 보조 버튼(취소 · 수정 · 기록 삭제)은 모두 같은 연한 바탕 */
+/* 근무자 박스 안 보조 버튼(취소 · 수정)은 같은 연한 바탕 (기록 삭제는 원래 모양) */
 @media (max-width: 767px) {
-  .kc-content .staff .btn-ghost,
+  .kc-content .staff .btn-ghost:not(.danger-ghost),
   .kc-content .add-form .btn-ghost { border: 0; border-radius: 14px; background: #f1f6fb; color: var(--ink); box-shadow: none; }
-  .kc-content .staff .btn-ghost.danger-ghost { color: var(--red); }
 }
