@@ -547,3 +547,33 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
   .day-week-wd { font-size: 14px; font-weight: 500; color: var(--ink-sub); }
   .day-week-cell.sun .day-week-wd { color: var(--red); }
 }
+/* 달력 머리의 달 이름 (v 없이) */
+@media (max-width: 767px) {
+  .m-month-title { margin: 0; font-size: 30px; font-weight: 700; letter-spacing: -.035em; line-height: 44px; white-space: nowrap; }
+}
+/* 요일 줄은 고정, 달은 위아래로 한 장씩 넘김 */
+@media (max-width: 767px) {
+  .attendance-viewport .month-picker-calendar .cal-wrap { height: 100%; }
+  .month-picker-calendar .m-weekdays.grid { flex: none; height: auto !important; grid-template-rows: auto; row-gap: 0; }
+  .month-pager { flex: 1; min-height: 0; overflow-y: auto; scroll-snap-type: y mandatory; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+  .month-page { height: var(--page-h, 100%); display: flex; flex-direction: column; scroll-snap-align: start; scroll-snap-stop: always; box-sizing: border-box; padding-bottom: 6px; }
+  .month-picker-calendar .month-page .grid { flex: 1; height: auto !important; min-height: 0; grid-template-rows: none; grid-auto-rows: minmax(0, 1fr); }
+  .cell.other-month .day-num { color: #18334b47; }
+  .cell.other-month.sun .day-num { color: #ff05bf47; }
+}
+/* 연도 화면: 해마다 열두 달을 작게 */
+@media (max-width: 767px) {
+  .year-view { height: 100%; overflow-y: auto; padding: 0 8px 24px; box-sizing: border-box; }
+  .year-block { padding: 4px 0 18px; }
+  .year-block + .year-block { border-top: 1px solid #dcebf7; padding-top: 14px; }
+  .year-title { margin: 0 4px 10px; font-size: 26px; font-weight: 700; letter-spacing: -.03em; color: var(--ink); }
+  .year-title.now { color: #379fef; }
+  .year-months { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 16px 10px; }
+  .mini-month { display: flex; flex-direction: column; align-items: stretch; gap: 6px; padding: 4px; border: 0; border-radius: 12px; background: none; font: inherit; color: var(--ink); text-align: left; cursor: pointer; }
+  .mini-month:active { background: #e7f4ff; }
+  .mini-month > b { font-size: 16px; font-weight: 700; padding-left: 2px; }
+  .mini-month.now > b { color: #379fef; }
+  .mini-days { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); row-gap: 2px; font-size: 9px; font-weight: 600; text-align: center; line-height: 15px; }
+  .mini-days .sun { color: var(--red); }
+  .mini-days .today { color: #18334b; background: #59B5FF; border-radius: 999px; }
+}

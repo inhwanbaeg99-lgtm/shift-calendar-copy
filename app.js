@@ -662,7 +662,10 @@ function sixWeekChips() {
   return Math.max(1, Math.floor((cell - 38) / 14.64) - 1);
 }
 
-function renderCalendar(period = state) {
+const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+// overflow: 첫 주 앞 · 마지막 주 뒤 빈칸에 지난달 · 다음 달 날짜를 흐리게 / weekdays: 요일 줄 포함
+function renderCalendar(period = state, { overflow = false, weekdays = true } = {}) {
   const { year, month } = period;
   const { selectedDate } = state;
   const today = todayDateString();
@@ -670,17 +673,18 @@ function renderCalendar(period = state) {
   const daysInMonth = new Date(year, month, 0).getDate();
 
   const cells = [];
-  for (let i = 0; i < startWeekday; i++) cells.push(null);
+  for (let i = 0; i < startWeekday; i++) cells.push(overflow ? { other: ymd(new Date(year, month - 1, i - startWeekday + 1)) } : null);
   for (let d = 1; d <= daysInMonth; d++) {
     cells.push(`${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`);
   }
-  while (cells.length % 7) cells.push(null);
+  for (let d = 1; cells.length % 7; d++) cells.push(overflow ? { other: ymd(new Date(year, month, d)) } : null);
   const sixWeeks = cells.length > 35;
   const maxVisible = sixWeeks ? sixWeekChips() : MAX_VISIBLE;
 
   const body = cells
     .map((date, i) => {
       if (!date) return `<div class="empty-cell"></div>`;
+      if (date.other) return `<button type="button" class="cell other-month${i % 7 === 0 ? " sun" : ""}" data-date="${date.other}"><span class="cell-top"><span class="day-num">${Number(date.other.slice(-2))}</span></span></button>`;
       const entries = recordsOn(date);
       const holiday = HOLIDAYS[date];
       const isRest = i % 7 === 0 || Boolean(holiday);
@@ -712,9 +716,13 @@ function renderCalendar(period = state) {
       <button type="button" class="round-btn" data-action="next-month" aria-label="다음 달">${ICON_NEXT}</button>
     </div>
     <div class="grid${sixWeeks ? " six-weeks" : ""}${state.monthDir ? ` slide-${state.monthDir}` : ""}">
-      ${WEEKDAYS.map((w, i) => `<div class="weekday${i === 0 ? " rest" : ""}">${w}</div>`).join("")}
+      ${weekdays ? weekdayRow() : ""}
       ${body}
     </div>`;
+}
+
+function weekdayRow() {
+  return WEEKDAYS.map((w, i) => `<div class="weekday${i === 0 ? " rest" : ""}">${w}</div>`).join("");
 }
 
 // 날짜 박스: 그날 출근한 사람들
@@ -903,7 +911,78 @@ function renderHome() {
 
 // 관리자 달력: 직원용 달력과 같은 화면. 출근 버튼은 없고 지난 날짜도 근무 시간을 고칠 수 있다.
 function renderAdminCalendar() {
-  return renderAdminShell("calendar", `<div class="admin-cal${isDesktop() ? "" : " month-picker-calendar"}">${renderCalendarCard()}</div>`, { center: true, wide: true });
+  if (isDesktop()) return renderAdminShell("calendar", `<div class="admin-cal">${renderCalendarCard()}</div>`, { center: true, wide: true });
+  if (state.yearView) return renderAdminShell("calendar", renderYearView());
+  const page = (offset) => {
+    const d = new Date(state.year, state.month - 1 + offset, 1);
+    return `<section class="month-page${offset ? "" : " current"}" data-offset="${offset}" aria-label="${d.getFullYear()}년 ${d.getMonth() + 1}월">${renderCalendar({ year: d.getFullYear(), month: d.getMonth() + 1 }, { overflow: true, weekdays: false })}</section>`;
+  };
+  return renderAdminShell("calendar", `
+    <div class="admin-cal month-picker-calendar"><div class="card"><div class="cal-wrap">
+      <div class="grid m-weekdays" aria-hidden="true">${weekdayRow()}</div>
+      <div class="month-pager">${[-1, 0, 1].map(page).join("")}</div>
+    </div></div></div>`);
+}
+
+// 지금 보이는 달의 날짜 칸 (앞뒤 달 페이지에도 같은 날짜가 흐리게 있어서 지금 달에서 먼저 찾는다)
+const calCell = (date) => app.querySelector(`.month-page.current [data-date="${date}"]`) || app.querySelector(`[data-date="${date}"]`);
+
+// 위아래로 넘겨 한 달씩: 앞 · 지금 · 다음 달 세 장을 두고, 멈춘 자리가 앞이나 다음 달이면 그 달을 가운데로 다시 그린다
+function setupMonthPager() {
+  const pager = app.querySelector(".month-pager");
+  if (!pager) return;
+  pager.style.setProperty("--page-h", `${pager.clientHeight}px`);
+  pager.scrollTop = pager.clientHeight;
+  let timer = null, shown = 1;
+  // 지금 보이는 장 (0: 지난달, 1: 이번 달, 2: 다음 달). 크기를 아직 모르면 이번 달
+  const pageIndex = () => pager.clientHeight ? Math.max(0, Math.min(2, Math.round(pager.scrollTop / pager.clientHeight))) : 1;
+  const settle = () => {
+    const idx = pageIndex();
+    if (idx === 1) return;
+    moveMonth(idx - 1);
+    state.monthDir = null;
+    render();
+  };
+  pager.addEventListener("scroll", () => {
+    // 넘기는 중에도 상단 연월은 바로 바뀐다
+    const idx = pageIndex();
+    if (idx !== shown) {
+      shown = idx;
+      const d = new Date(state.year, state.month - 1 + idx - 1, 1);
+      const title = app.querySelector(".m-month-title");
+      const year = app.querySelector(".m-year-back span");
+      if (title) title.textContent = `${d.getMonth() + 1}월`;
+      if (year) year.textContent = `${d.getFullYear()}년`;
+    }
+    clearTimeout(timer);
+    timer = setTimeout(settle, 140);
+  }, { passive: true });
+  if ("onscrollend" in window) pager.addEventListener("scrollend", () => { clearTimeout(timer); settle(); });
+}
+
+// 연도 화면: 해마다 열두 달을 작게. 달을 누르면 그 달로
+function miniMonth(year, month, today) {
+  const start = new Date(year, month - 1, 1).getDay();
+  const days = new Date(year, month, 0).getDate();
+  const nums = [];
+  for (let i = 0; i < start; i++) nums.push("<span></span>");
+  for (let d = 1; d <= days; d++) {
+    const date = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    nums.push(`<span class="${date === today ? "today" : (start + d - 1) % 7 === 0 ? "sun" : ""}">${d}</span>`);
+  }
+  const current = today.slice(0, 7) === `${year}-${String(month).padStart(2, "0")}`;
+  return `<button type="button" class="mini-month${current ? " now" : ""}" data-action="pick-month" data-ym="${year}-${month}" aria-label="${year}년 ${month}월"><b>${month}월</b><span class="mini-days">${nums.join("")}</span></button>`;
+}
+function renderYearView() {
+  const today = todayDateString();
+  const thisYear = Number(today.slice(0, 4));
+  const first = Math.min(thisYear - 5, state.year, ...store.records.map(r => Number(r.date.slice(0, 4))).filter(Number.isFinite));
+  const last = Math.max(thisYear + 5, state.year);
+  let html = "";
+  for (let y = first; y <= last; y++) {
+    html += `<section class="year-block" data-year="${y}"><h2 class="year-title${y === thisYear ? " now" : ""}">${y}년</h2><div class="year-months">${Array.from({ length: 12 }, (_, i) => miniMonth(y, i + 1, today)).join("")}</div></section>`;
+  }
+  return `<div class="year-view">${html}</div>`;
 }
 
 
@@ -1095,7 +1174,7 @@ function renderMobileShell(active, content) {
   const logoutIcon = '<svg class="m-exit-symbol" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>';
   return `
     <header class="m-top${["calendar","records"].includes(route().name) ? " m-calendar-top" : ["day","pay-detail"].includes(route().name) ? ` m-day-top${route().name === "pay-detail" ? " m-pay-detail-top" : ""}` : ""}">
-      ${route().name === "calendar" ? `<div class="m-cal-heading"><button type="button" class="m-year-back" data-action="prev-month" aria-label="이전 달">${ICON_PREV}<span>${state.year}년</span></button>${mobilePayrollMonthSelect(true)}</div>` : ""}
+      ${route().name === "calendar" ? state.yearView ? `<div class="m-cal-heading"></div>` : `<div class="m-cal-heading"><button type="button" class="m-year-back" data-action="open-year" aria-label="연도별 달력 보기">${ICON_PREV}<span>${state.year}년</span></button><p class="m-month-title">${state.month}월</p></div>` : ""}
       ${route().name === "records" ? mobilePayrollMonthSelect() : ""}
       ${route().name === "day" ? `<button type="button" class="m-day-back" data-action="go-home" aria-label="달력으로 돌아가기">${ICON_PREV}</button>` : ""}
       ${route().name === "pay-detail" ? `<a class="m-day-back" href="#/records" aria-label="급여 목록으로 돌아가기">${ICON_PREV}</a>` : ""}
@@ -2942,7 +3021,7 @@ const TOURS = {
         ],
   calendar: (pc) => [
     ...(pc ? [] : [{ sel: ".m-today", title: "오늘 근무자", text: "오늘 일할 사람과 출근했는지가 보여요. 누르면 오늘 화면으로 가요." }]),
-    { sel: pc ? ".cal-head" : ".m-top .dd", title: "달 바꾸기", text: pc ? "화살표로 지난달, 다음 달을 봐요." : "상단 연월을 누르면 월 선택 목록이 펼쳐져요. 원하는 달을 선택하면 달력이 바뀌어요. 날짜를 누르면 그날의 상세 화면이 열려요." },
+    { sel: pc ? ".cal-head" : ".m-cal-heading", title: "달 바꾸기", text: pc ? "화살표로 지난달, 다음 달을 봐요." : "달력을 위아래로 넘기면 한 달씩 바뀌어요. 위의 <b>&lt; 연도</b>를 누르면 한 해 열두 달이 작게 보이고, 달을 누르면 그 달로 가요. 날짜를 누르면 그날의 상세 화면이 열려요." },
     { sel: [".cell:has(.day-num.today)", ".grid .cell"], title: "날짜 칸", text: "그날 출근 기록이 이름과 시간으로 보여요. 근무표보다 <b style=\"color:var(--more)\">더 일하면 파랑</b>, <b style=\"color:var(--red)\">덜 일하면 빨강</b>이에요. 날짜를 누르면 그날이 열려요." },
     { scene: "day", sel: ".date-box", title: "그날 출근 기록", text: "날짜를 누르면 이렇게 열려요. 여기 보이는 출퇴근 시간이 급여에 들어가요. 찍은 시각을 <b>10분 단위로 반올림</b>한 시간이에요(13:52 → 13:50, 13:55 → 14:00)." },
     { scene: "day", sel: ".staff", title: "근무 예정", text: "그날 근무표에 있는 사람이에요. 이름 밑 시간은 <b>근무표 시간</b>이라 출퇴근 기록을 고쳐도 바뀌지 않아요." },
@@ -3259,7 +3338,7 @@ function fitMobileAttendanceCalendar() {
   cancelAnimationFrame(calendarFitFrame);
   calendarFitFrame = requestAnimationFrame(() => {
     if (isDesktop()) return;
-    const grid = app.querySelector(".month-picker-calendar .grid");
+    const grid = app.querySelector(".month-picker-calendar .grid, .year-view");
     const menu = app.querySelector(".m-text-nav");
     if (!grid || !menu) return;
     const menuStyle = getComputedStyle(menu);
@@ -3276,11 +3355,17 @@ function fitMobileAttendanceCalendar() {
     }
     // 본문 자체를 메뉴 위에서 끝내고, 그 안에서 날짜 줄을 균등 배분한다.
     grid.style.removeProperty("height");
+    // 크기가 바뀌면 달 넘기기 칸도 지금 달에 다시 맞춘다
+    const pager = app.querySelector(".month-pager");
+    if (pager?.clientHeight) {
+      pager.style.setProperty("--page-h", `${pager.clientHeight}px`);
+      if (Math.round(pager.scrollTop / pager.clientHeight) <= 1) pager.scrollTop = pager.clientHeight;
+    }
   });
 }
 function observeMobileCalendarLayout() {
   calendarFitObserver?.disconnect();
-  if (!app.querySelector(".month-picker-calendar") || !window.ResizeObserver) return;
+  if (!app.querySelector(".month-picker-calendar, .year-view") || !window.ResizeObserver) return;
   calendarFitObserver = new ResizeObserver(fitMobileAttendanceCalendar);
   app.querySelectorAll(".m-top, .m-text-nav, .m-install").forEach(el => calendarFitObserver.observe(el));
 }
@@ -3318,6 +3403,7 @@ function render() {
   if (period) fitPeriod(period);
   lockDemoFields();
   enhanceSelects();
+  setupMonthPager();
   observeMobileCalendarLayout();
   fitMobileAttendanceCalendar();
   placeNavPill();
@@ -3450,7 +3536,7 @@ function navigate(hash) {
 // 누른 날짜의 주가 그대로 위로 올라가 주간 날짜 줄이 되고, 고른 날은 파란 원, 그 밑에 상세가 떠오른다
 async function animateDateIntoDetails(date) {
   const week = dayWeekDates(date);
-  const grid = app.querySelector(".grid");
+  const grid = app.querySelector(".month-page.current .grid") || app.querySelector(".grid");
   if (!grid) { render(); return; }
   // 달력 숫자들의 지금 자리를 기억해 둔다 (그 주는 위로 올라가고, 나머지는 겹쳐 그린 뒤 흐려지며 사라진다)
   const from = new Map();
@@ -3458,7 +3544,7 @@ async function animateDateIntoDetails(date) {
   ghost.className = "date-morph-layer week-ghost";
   ghost.setAttribute("aria-hidden", "true");
   const weekTop = Math.min(...week.map(d => grid.querySelector(`[data-date="${d}"] .day-num`)?.getBoundingClientRect().top ?? Infinity));
-  const weekdays = Array.from(grid.querySelectorAll(".weekday"), el => el.getBoundingClientRect());
+  const weekdays = Array.from(app.querySelectorAll(".m-weekdays .weekday, .grid .weekday"), el => el.getBoundingClientRect()).slice(0, 7);
   grid.querySelectorAll(".day-num, .dot.on").forEach(el => {
     const r = el.getBoundingClientRect();
     const cell = el.closest("[data-date]");
@@ -3517,6 +3603,36 @@ async function animateDateIntoDetails(date) {
   }
 }
 
+// 연도 화면으로: 달력이 작아지며 열두 달 속으로 들어간다
+function openYearView() {
+  state.yearView = true;
+  render();
+  const view = app.querySelector(".year-view");
+  const target = view?.querySelector(`[data-ym="${state.year}-${state.month}"]`);
+  if (!view || !target) return;
+  view.scrollTop = target.closest(".year-block").offsetTop - 8;
+  if (reducedMotion()) return;
+  const r = target.getBoundingClientRect(), v = view.getBoundingClientRect();
+  view.style.transformOrigin = `${r.left + r.width / 2 - v.left}px ${r.top + r.height / 2 - v.top}px`;
+  view.animate([{ transform: "scale(2.4)", opacity: 0 }, { transform: "none", opacity: 1 }], { duration: 380, easing: "cubic-bezier(.22,.75,.2,1)" });
+}
+// 작은 달을 누르면 그 달이 화면 가득 커지며 달력으로 돌아간다
+function pickMonthFromYear(el) {
+  const r = el.getBoundingClientRect();
+  [state.year, state.month] = el.dataset.ym.split("-").map(Number);
+  state.yearView = false;
+  state.monthDir = null;
+  render();
+  const pager = app.querySelector(".month-pager");
+  if (!pager || reducedMotion()) return;
+  const p = pager.getBoundingClientRect();
+  pager.style.transformOrigin = "0 0";
+  pager.animate([
+    { transform: `translate(${r.left - p.left}px,${r.top - p.top}px) scale(${r.width / p.width},${r.height / p.height})`, opacity: 0.4 },
+    { transform: "none", opacity: 1 },
+  ], { duration: 380, easing: "cubic-bezier(.22,.75,.2,1)" }).finished.then(() => pager.style.removeProperty("transform-origin"));
+}
+
 let pendingTabShift = 0;
 function navigateMobileTab(hash) {
   const order = ["calendar","schedule","employees","records"];
@@ -3558,11 +3674,11 @@ window.addEventListener("hashchange", () => {
     document.documentElement.dataset.dayTransition = wasDay ? "back" : "forward";
     state.pageEnter = false;
     const date = wasDay ? app.querySelector(".day-page").dataset.detailDate : route().date;
-    const source = wasDay ? app.querySelector(".day-page-inner") : app.querySelector(`[data-date="${date}"]`);
+    const source = wasDay ? app.querySelector(".day-page-inner") : calCell(date);
     if (source) source.style.viewTransitionName = "date-zoom";
     const transition = document.startViewTransition(() => {
       render();
-      const target = wasDay ? app.querySelector(`[data-date="${date}"]`) : app.querySelector(".day-page-inner");
+      const target = wasDay ? calCell(date) : app.querySelector(".day-page-inner");
       if (target) target.style.viewTransitionName = "date-zoom";
     });
     transition.finished.finally(() => {
@@ -3886,6 +4002,12 @@ app.addEventListener("click", (e) => {
     case "next-month":
       moveMonth(action === "prev-month" ? -1 : 1);
       break;
+    case "open-year":
+      openYearView();
+      return;
+    case "pick-month":
+      pickMonthFromYear(el);
+      return;
     case "open-today":
       navigate(`#/day/${todayDateString()}`);
       return;
@@ -4448,7 +4570,7 @@ function renderInstallHint() {
 // ---------- 둘러보기(로그인 전): 보기만, 고치는 동작은 막는다 ----------
 // 화면을 옮겨 다니고 펼쳐 보는 동작만 허용. 나머지(추가·수정·삭제·저장·내보내기)는 안내만 띄운다.
 const DEMO_ALLOWED = new Set([
-  "prev-month", "next-month", "close-panel", "go-home", "toggle-staff", "toggle-rec", "toggle-help",
+  "prev-month", "next-month", "open-year", "pick-month", "close-panel", "go-home", "toggle-staff", "toggle-rec", "toggle-help",
   "payroll-prev", "payroll-next", "preview-payslip", "open-payslip", "close-payslip",
   "open-employee-page", "employee-list", "open-pay-page", "open-sheet", "close-sheet", "sched-day", "open-today", "install-app", "dismiss-install", "start-tour", "toggle-mobile-menu",
 ]);
