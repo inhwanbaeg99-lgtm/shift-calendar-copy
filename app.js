@@ -4970,6 +4970,11 @@ app.addEventListener("click", (e) => {
     case "open-payslip":
       state.modalEnter = true;
       openPayslipState(id);
+      // 휴대폰: 수당 추가하기 한 번에 빈 칸을 열고 바로 입력
+      if (!isDesktop()) {
+        state.allowDraft.push({ name: "", amount: 0 });
+        setTimeout(() => [...document.querySelectorAll(".m-allow-inline [data-allow=name]")].pop()?.focus());
+      }
       break;
     case "close-payslip":
       state.payslipId = null;
@@ -4987,6 +4992,7 @@ app.addEventListener("click", (e) => {
       break;
     case "add-allowance":
       state.allowDraft.push({ name: "", amount: 0 });
+      if (!isDesktop()) setTimeout(() => [...document.querySelectorAll(".m-allow-inline [data-allow=name]")].pop()?.focus());
       break;
     case "remove-allowance":
       state.allowDraft.splice(Number(el.dataset.index), 1);
