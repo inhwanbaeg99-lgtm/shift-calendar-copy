@@ -720,14 +720,14 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
   .kc-content .staff-title { margin: 0 4px 10px; font-size: 15px; font-weight: 700; color: var(--ink); }
   .kc-content .staff-list { display: flex; flex-direction: column; gap: 8px; margin: 0; }
   .kc-content .staff-item { overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); box-shadow: none; }
-  .kc-content .staff-item.expanded { box-shadow: inset 3px 0 0 #59B5FF; }
+  .kc-content .staff-item.expanded { box-shadow: none; }
   .kc-content .staff-list > .in-empty { padding: 22px 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); color: var(--ink-sub); text-align: center; }
   .kc-content .staff-name-btn { display: grid; grid-template-columns: minmax(0,1fr) auto; grid-template-areas: "name badge" "time badge"; row-gap: 2px; column-gap: 12px; min-height: 64px; padding: 14px 16px; }
   .kc-content .staff-name { grid-area: name; font-size: 16px; }
   .kc-content .staff-time { grid-area: time; font-size: 13px; }
   .kc-content .staff-name-btn .badge { grid-area: badge; align-self: center; justify-self: end; }
   .kc-content .staff-action { padding: 0 16px 14px; }
-  .kc-content .staff .add-btn { height: 56px; margin-top: 10px; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); color: #379fef; font-size: 14px; font-weight: 700; }
+  .kc-content .staff .add-btn { height: 56px; margin-top: 10px; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); color: var(--ink); font-size: 14px; font-weight: 700; }
   .kc-content .staff .add-form { margin-top: 10px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); }
 }
 
