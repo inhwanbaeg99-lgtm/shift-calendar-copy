@@ -536,16 +536,20 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
 .week-ghost { pointer-events: none; }
 /* 달력 머리: 위 줄 < 2026년 (누르면 이전 달), 아래 줄 11월 v */
 @media (max-width: 767px) {
-  .m-top.m-calendar-top:has(.m-cal-heading) { grid-template-rows: auto; align-items: end; }
+  /* 도움말 · 계정 아이콘은 다른 탭처럼 첫 줄에, 달 이름은 그 아래 줄 */
+  .m-top.m-calendar-top:has(.m-cal-heading) { grid-template-rows: 44px auto; align-items: center; }
+  .m-calendar-top .m-cal-heading { grid-row: 1 / span 2; align-self: start; }
+  .m-calendar-top:has(.m-cal-heading) :is(.m-store, .m-tour, .m-login) { grid-row: 1; }
   .m-cal-heading { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
-  .m-year-back { display: inline-flex; align-items: center; gap: 2px; margin: 0 0 -2px -6px; padding: 4px 6px; border: 0; background: none; color: #379fef; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; }
-  .m-year-back svg { width: 20px; height: 20px; }
+  .m-year-back, .m-top .m-day-back.m-back-label { display: inline-flex; align-items: center; gap: 2px; width: auto; height: 44px; margin: 0 0 0 -6px; padding: 0 6px; border: 0; background: none; color: #379fef; font: inherit; font-size: 16px; font-weight: 600; white-space: nowrap; cursor: pointer; }
+  .m-year-back svg, .m-back-label svg { width: 20px; height: 20px; }
+  .m-top.m-day-top:not(.m-pay-detail-top) { grid-template-columns: max-content minmax(0,1fr) 40px 40px; }
   .m-cal-heading .dd-btn { font-size: 30px; }
 }
 /* 주간 날짜 줄의 요일 글자는 달력 요일 줄과 같은 모양 (옮겨 가도 바뀌지 않게) */
 @media (max-width: 767px) {
-  .day-week-wd { font-size: 14px; font-weight: 500; color: var(--ink-sub); }
-  .day-week-cell.sun .day-week-wd { color: var(--red); }
+  .day-week-wd { font-size: 12px; font-weight: 500; color: var(--ink-sub); }
+  .day-week-wd.sun { color: var(--red); }
 }
 /* 달력 머리의 달 이름 (v 없이) */
 @media (max-width: 767px) {
@@ -576,4 +580,12 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
   .mini-days { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); row-gap: 2px; font-size: 9px; font-weight: 600; text-align: center; line-height: 15px; }
   .mini-days .sun { color: var(--red); }
   .mini-days .today { color: #18334b; background: #59B5FF; border-radius: 999px; }
+}
+/* 상세 주간 줄: 요일 글자는 고정, 날짜 줄만 옆으로 넘겨 지난주 · 다음 주 */
+@media (max-width: 767px) {
+  .day-week-wrap { margin: 0 0 18px; }
+  .day-week-labels { display: grid; grid-template-columns: repeat(7,minmax(0,1fr)); gap: 5px; padding: 4px 0; text-align: center; }
+  .day-week-scroll { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; }
+  .day-week-scroll .day-week { flex: 0 0 100%; margin: 0; scroll-snap-align: start; scroll-snap-stop: always; }
+  .day-week-scroll .day-week-cell { min-height: 0; padding: 6px 0; }
 }

@@ -1016,11 +1016,42 @@ function dayWeekDates(date) {
     return `${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,"0")}-${String(day.getDate()).padStart(2,"0")}`;
   });
 }
+// 요일 글자는 제자리, 날짜 줄은 옆으로 밀면 지난주 · 다음 주
 function renderDayWeek(date) {
   const today=todayDateString();
-  return `<nav class="day-week" aria-label="선택한 주 날짜">${dayWeekDates(date).map((day,i)=>
-    `<button type="button" class="day-week-cell${day===date ? " selected" : ""}${day===today ? " today" : ""}${i===0 ? " sun" : i===6 ? " sat" : ""}" data-date="${day}" aria-label="${Number(day.slice(5,7))}월 ${Number(day.slice(8))}일 ${WEEKDAYS[i]}요일"${day===date ? ' aria-current="date"' : ""}><span class="day-week-wd">${WEEKDAYS[i]}</span><span class="day-week-num">${Number(day.slice(8))}</span></button>`
-  ).join("")}</nav>`;
+  const week = (offset) => {
+    const base = new Date(`${date}T12:00:00`);
+    base.setDate(base.getDate()+offset);
+    return `<nav class="day-week${offset ? "" : " current"}" data-offset="${offset}" aria-label="${offset ? (offset < 0 ? "지난주" : "다음 주") : "선택한 주"} 날짜"${offset ? ' aria-hidden="true"' : ""}>${dayWeekDates(ymd(base)).map((day,i)=>
+      `<button type="button" class="day-week-cell${day===date ? " selected" : ""}${day===today ? " today" : ""}${i===0 ? " sun" : i===6 ? " sat" : ""}" data-date="${day}" aria-label="${Number(day.slice(5,7))}월 ${Number(day.slice(8))}일 ${WEEKDAYS[i]}요일"${day===date ? ' aria-current="date"' : ""}${offset ? ' tabindex="-1"' : ""}><span class="day-week-num">${Number(day.slice(8))}</span></button>`
+    ).join("")}</nav>`;
+  };
+  return `<div class="day-week-wrap"><div class="day-week-labels" aria-hidden="true">${WEEKDAYS.map((w,i)=>`<span class="day-week-wd${i===0 ? " sun" : ""}">${w}</span>`).join("")}</div><div class="day-week-scroll">${[-7,0,7].map(week).join("")}</div></div>`;
+}
+
+// 주간 줄을 옆으로 넘겨 멈추면 같은 요일의 지난주 · 다음 주로
+function setupWeekScroll() {
+  const box = app.querySelector(".day-week-scroll");
+  if (!box) return;
+  box.scrollLeft = box.clientWidth;
+  let timer = null;
+  const settle = () => {
+    if (!box.clientWidth) return;
+    const idx = Math.round(box.scrollLeft / box.clientWidth);
+    if (idx === 1) return;
+    const base = new Date(`${app.querySelector(".day-page").dataset.detailDate}T12:00:00`);
+    base.setDate(base.getDate() + (idx - 1) * 7);
+    const next = ymd(base);
+    state.year = base.getFullYear();
+    state.month = base.getMonth() + 1;
+    location.replace(`#/day/${next}`);
+    // 새 주의 상세는 넘긴 쪽에서 들어온다
+    requestAnimationFrame(() => app.querySelector(".day-page .day-area-inner")?.animate(
+      [{ opacity: 0, transform: `translateX(${(idx - 1) * 24}px)` }, { opacity: 1, transform: "none" }],
+      { duration: 300, easing: "cubic-bezier(.22,.75,.2,1)" }));
+  };
+  box.addEventListener("scroll", () => { clearTimeout(timer); timer = setTimeout(settle, 140); }, { passive: true });
+  if ("onscrollend" in window) box.addEventListener("scrollend", () => { clearTimeout(timer); settle(); });
 }
 
 function renderDayPage(date) {
@@ -1197,7 +1228,7 @@ function renderMobileShell(active, content) {
     <header class="m-top${["calendar","records"].includes(route().name) ? " m-calendar-top" : ["day","pay-detail"].includes(route().name) ? ` m-day-top${route().name === "pay-detail" ? " m-pay-detail-top" : ""}` : ""}">
       ${route().name === "calendar" ? state.yearView ? `<div class="m-cal-heading"></div>` : `<div class="m-cal-heading"><button type="button" class="m-year-back" data-action="open-year" aria-label="연도별 달력 보기">${ICON_PREV}<span>${state.year}년</span></button><p class="m-month-title">${state.month}월</p></div>` : ""}
       ${route().name === "records" ? mobilePayrollMonthSelect() : ""}
-      ${route().name === "day" ? `<button type="button" class="m-day-back" data-action="go-home" aria-label="달력으로 돌아가기">${ICON_PREV}</button>` : ""}
+      ${route().name === "day" ? `<button type="button" class="m-day-back m-back-label" data-action="go-home" aria-label="달력으로 돌아가기">${ICON_PREV}<span>${Number(route().date.slice(5, 7))}월</span></button>` : ""}
       ${route().name === "pay-detail" ? `<a class="m-day-back" href="#/records" aria-label="급여 목록으로 돌아가기">${ICON_PREV}</a>` : ""}
       ${route().name === "pay-detail" ? `<div class="m-pay-header-person">${mobilePayEmployeeSelect(route().id)}</div>` : `<span class="m-store" aria-hidden="true"></span><button type="button" class="m-tour" data-action="start-tour" aria-label="도움말" title="도움말">?</button>`}
       ${route().name === "pay-detail" ? `<button type="button" class="m-pay-download" data-action="payslip-pdf-one" data-id="${esc(route().id)}" aria-label="명세서 PDF 다운로드" title="명세서 PDF 다운로드"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 16v4h16v-4"/></svg></button>` : demoLoaded ? `<a class="m-login" href="#/login" aria-label="로그인" title="로그인">${accountIcon}</a>` : `<a class="m-login" href="#/mypage" aria-label="마이페이지" title="마이페이지">${accountIcon}</a>`}
@@ -3421,6 +3452,7 @@ function render() {
   lockDemoFields();
   enhanceSelects();
   setupMonthScroll();
+  setupWeekScroll();
   observeMobileCalendarLayout();
   fitMobileAttendanceCalendar();
   placeNavPill();
@@ -3584,11 +3616,25 @@ async function animateDateIntoDetails(date) {
     copy.style.opacity = copy.dataset.op = getComputedStyle(el.closest(".cell") || el).opacity;
     ghost.append(copy);
   });
-  document.body.append(ghost);
+  // 상단: 큰 '11월'은 뒤로 가기 글자 자리로 작아지며 옮겨 가고, '2026년'은 흐려진다
+  const header = [".m-month-title", ".m-year-back span"].map(sel => {
+    const el = app.querySelector(sel);
+    if (!el) return null;
+    const r = el.getBoundingClientRect(), cs = getComputedStyle(el);
+    const copy = document.createElement("span");
+    copy.textContent = el.textContent;
+    Object.assign(copy.style, { position: "fixed", left: `${r.left}px`, top: `${r.top}px`, height: `${r.height}px`, display: "flex", alignItems: "center", whiteSpace: "nowrap", font: cs.font, letterSpacing: cs.letterSpacing, color: cs.color, transformOrigin: "0 50%" });
+    return { copy, r, font: parseFloat(cs.fontSize) };
+  });
+  const headerLayer = document.createElement("div");
+  headerLayer.className = "date-morph-layer week-ghost";
+  header.forEach(h => h && headerLayer.append(h.copy));
+  document.body.append(ghost, headerLayer);
   state.pageEnter = false;
   state.dayEnter = false;
   render();
-  const strip = app.querySelector(".day-week");
+  const strip = app.querySelector(".day-week.current");
+  const labels = app.querySelectorAll(".day-week-labels .day-week-wd");
   const box = app.querySelector(".day-page .day-area-inner");
   const ease = "cubic-bezier(.22,.75,.2,1)";
   const anims = [];
@@ -3609,17 +3655,34 @@ async function animateDateIntoDetails(date) {
         // 다른 달 날짜는 달력에 없으므로 제자리에서 나타난다
         anims.push(num.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, delay: 220, easing: "ease-out", fill: "backwards" }));
       }
-      const wd = cell.querySelector(".day-week-wd");
-      const wdFrom = weekdays[Array.prototype.indexOf.call(strip.children, cell)];
+      const i = Array.prototype.indexOf.call(strip.children, cell);
+      const wd = labels[i];
+      const wdFrom = weekdays[i];
       if (wdFrom) {
         const to = wd.getBoundingClientRect();
         anims.push(wd.animate([{ transform: `translate(${wdFrom.left + wdFrom.width / 2 - (to.left + to.width / 2)}px,${wdFrom.top + wdFrom.height / 2 - (to.top + to.height / 2)}px)` }, { transform: "none" }], { duration: 480, easing: ease }));
       }
     });
     if (box) anims.push(box.animate([{ opacity: 0, transform: "translateY(28px)" }, { opacity: 1, transform: "none" }], { duration: 420, delay: 220, easing: ease, fill: "backwards" }));
+    const [title, year] = header;
+    const back = app.querySelector(".m-back-label span");
+    if (title && back) {
+      const to = back.getBoundingClientRect(), cs = getComputedStyle(back);
+      title.copy.textContent = back.textContent;
+      back.style.visibility = "hidden";
+      const move = title.copy.animate([
+        { transform: "none" },
+        { transform: `translate(${to.left - title.r.left}px,${to.top + to.height / 2 - (title.r.top + title.r.height / 2)}px) scale(${parseFloat(cs.fontSize) / title.font})`, color: cs.color },
+      ], { duration: 460, easing: ease, fill: "forwards" });
+      anims.push(move);
+      move.finished.finally(() => back.style.removeProperty("visibility"));
+    }
+    if (year) anims.push(year.copy.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, easing: "ease-out", fill: "forwards" }));
     await Promise.all(anims.map(a => a.finished.catch(() => {})));
   } finally {
     ghost.remove();
+    headerLayer.remove();
+    app.querySelector(".m-back-label span")?.style.removeProperty("visibility");
   }
 }
 
