@@ -1070,3 +1070,5 @@ input, textarea { caret-color: #59B5FF; }
   .lock-page { min-height: 100svh; justify-content: flex-start; padding: max(14vh, 72px) 20px 24px; gap: 12px; }
   .lock-brand { gap: 10px; margin-bottom: 6px; }
 }
+/* 알림은 글래시 박스(흐린 배경) 위에 선명하게 */
+.toast { z-index: 1300; }

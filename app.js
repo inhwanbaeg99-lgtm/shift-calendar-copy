@@ -5303,7 +5303,13 @@ function showToast(text, kind = "") {
 const blockDemo = (e) => {
   e.preventDefault();
   e.stopImmediatePropagation();
-  showToast("둘러보기 중이에요. 로그인하면 쓸 수 있어요.");
+  // 화면을 다시 그리지 않고 알림만 띄운다 (글래시 박스가 다시 뜨며 깜빡이지 않게)
+  state.toast = "둘러보기 중이에요. 로그인하면 쓸 수 있어요.";
+  state.toastKind = "";
+  document.querySelector(".toast")?.remove();
+  app.insertAdjacentHTML("beforeend", toastHtml());
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(hideToast, 2200);
 };
 // 보기만 바꾸는 입력칸 (급여 화면의 직원 선택)
 const demoViewField = (t) => t.dataset?.payroll !== undefined || t.dataset?.calendarMonth !== undefined || t.dataset?.payEmployee !== undefined;
