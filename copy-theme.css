@@ -998,7 +998,6 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
   .share-box { border: 1px solid #ffffffb3; border-radius: 22px; background: #ffffffd9; backdrop-filter: blur(18px) saturate(1.2); -webkit-backdrop-filter: blur(18px) saturate(1.2); box-shadow: 0 18px 50px #59b5ff33, inset 0 1px 0 #ffffffcc; animation: m-card-in .34s cubic-bezier(.22,.75,.2,1); }
   .share-actions button { min-height: 44px; border-radius: 14px; }
   .share-actions [data-share="close"] { border: 1px solid #ffb3e6; background: #fff0fb; color: #FF05BF; }
-  .share-actions [data-share="save"] { border: 0; background: #e8f4ff; color: #379fef; }
 }
 @media (max-width: 767px) {
   .m-add-emp-card .sheet-actions { position: static; padding: 0; border: 0; background: none; box-shadow: none; }

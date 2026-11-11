@@ -4582,8 +4582,9 @@ app.addEventListener("click", (e) => {
 
   const el = e.target.closest("[data-action]");
   // 명세서 창 안쪽 빈 곳을 누르면 바깥(닫기)으로 전달되지 않게
-  const isBackdrop = el?.classList.contains("ps-backdrop") || el?.classList.contains("sheet-backdrop");
-  const insideDialog = isBackdrop && e.target.closest("[data-stop]") && !e.target.closest("[data-action]:not(.ps-backdrop):not(.sheet-backdrop)");
+  // 글래시 박스(.m-blur-layer)도 카드 안쪽은 바깥 닫기로 넘기지 않는다
+  const isBackdrop = el?.matches(".ps-backdrop, .sheet-backdrop, .m-blur-layer");
+  const insideDialog = isBackdrop && e.target.closest("[data-stop], .m-blur-card") && !e.target.closest("[data-action]:not(.ps-backdrop):not(.sheet-backdrop):not(.m-blur-layer)");
   if (!el || insideDialog) return;
   const { action, id } = el.dataset;
 
@@ -5595,6 +5596,18 @@ app.addEventListener("focusin", (e) => {
 });
 app.addEventListener("change", (e) => {
   if (e.target.id === "slot-emp") liveSlot();
+});
+// 휴대폰: 입력칸을 누르면 키보드가 올라온 뒤 그 칸이 화면 가운데에 오게
+document.addEventListener("focusin", (e) => {
+  const t = e.target;
+  if (isDesktop() || !t.matches?.("input:not([type=radio]):not([type=checkbox]):not([type=hidden]), textarea")) return;
+  setTimeout(() => {
+    if (document.activeElement !== t) return;
+    const vv = window.visualViewport;
+    const r = t.getBoundingClientRect();
+    const h = vv ? vv.height : innerHeight;
+    if (r.top < 70 || r.bottom > h - 90) t.scrollIntoView({ block: "center", behavior: reducedMotion() ? "auto" : "smooth" });
+  }, 320);
 });
 
 // ---------- 온라인 저장소 (Firebase Realtime Database) ----------
