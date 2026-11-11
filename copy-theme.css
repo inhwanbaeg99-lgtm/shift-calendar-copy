@@ -534,3 +534,16 @@ body::-webkit-scrollbar, body *::-webkit-scrollbar, html::-webkit-scrollbar { di
   .day-week-cell.selected .day-week-num { background: #59B5FF; color: #18334b; box-shadow: 0 8px 28px #59b5ff25; }
 }
 .week-ghost { pointer-events: none; }
+/* 달력 머리: 위 줄 < 2026년 (누르면 이전 달), 아래 줄 11월 v */
+@media (max-width: 767px) {
+  .m-top.m-calendar-top:has(.m-cal-heading) { grid-template-rows: auto; align-items: end; }
+  .m-cal-heading { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
+  .m-year-back { display: inline-flex; align-items: center; gap: 2px; margin: 0 0 -2px -6px; padding: 4px 6px; border: 0; background: none; color: #379fef; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; }
+  .m-year-back svg { width: 20px; height: 20px; }
+  .m-cal-heading .dd-btn { font-size: 30px; }
+}
+/* 주간 날짜 줄의 요일 글자는 달력 요일 줄과 같은 모양 (옮겨 가도 바뀌지 않게) */
+@media (max-width: 767px) {
+  .day-week-wd { font-size: 14px; font-weight: 500; color: var(--ink-sub); }
+  .day-week-cell.sun .day-week-wd { color: var(--red); }
+}

@@ -1078,7 +1078,7 @@ function mobilePayrollMonthSelect(calendar = false) {
   let options = "";
   for (let i=earliest;i<=latest;i++) {
     const y=Math.floor(i/12),m=i%12+1,value=`${y}-${String(m).padStart(2,"0")}`;
-    options += `<option value="${value}"${value===selected ? " selected" : ""}>${y}년 ${m}월</option>`;
+    options += `<option value="${value}"${calendar ? ` data-short="${m}월"` : ""}${value===selected ? " selected" : ""}>${y}년 ${m}월</option>`;
   }
   return `<select class="field m-payroll-month-select${calendar ? " m-calendar-month-select" : ""}" ${calendar ? 'data-calendar-month="true"' : 'data-payroll="month"'} aria-label="${calendar ? "출퇴근 조회 월" : "급여 조회 월"}">${options}</select>`;
 }
@@ -1095,7 +1095,7 @@ function renderMobileShell(active, content) {
   const logoutIcon = '<svg class="m-exit-symbol" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>';
   return `
     <header class="m-top${["calendar","records"].includes(route().name) ? " m-calendar-top" : ["day","pay-detail"].includes(route().name) ? ` m-day-top${route().name === "pay-detail" ? " m-pay-detail-top" : ""}` : ""}">
-      ${route().name === "calendar" ? mobilePayrollMonthSelect(true) : ""}
+      ${route().name === "calendar" ? `<div class="m-cal-heading"><button type="button" class="m-year-back" data-action="prev-month" aria-label="이전 달">${ICON_PREV}<span>${state.year}년</span></button>${mobilePayrollMonthSelect(true)}</div>` : ""}
       ${route().name === "records" ? mobilePayrollMonthSelect() : ""}
       ${route().name === "day" ? `<button type="button" class="m-day-back" data-action="go-home" aria-label="달력으로 돌아가기">${ICON_PREV}</button>` : ""}
       ${route().name === "pay-detail" ? `<a class="m-day-back" href="#/records" aria-label="급여 목록으로 돌아가기">${ICON_PREV}</a>` : ""}
@@ -3369,7 +3369,7 @@ function enhanceSelects() {
     sel.before(dd);
     dd.append(sel);
     sel.tabIndex = -1;
-    const label = sel.selectedOptions[0]?.textContent ?? "";
+    const label = sel.selectedOptions[0]?.dataset.short || sel.selectedOptions[0]?.textContent || "";
     dd.insertAdjacentHTML(
       "beforeend",
       `<button type="button" class="dd-btn" aria-haspopup="listbox" aria-expanded="false"${sel.disabled ? " disabled" : ""}${sel.getAttribute("aria-label") ? ` aria-label="${esc(sel.getAttribute("aria-label"))}"` : ""}><span>${esc(label)}</span>${DD_CHEVRON}</button>`,
@@ -3406,7 +3406,7 @@ function pickDropdown(opt) {
   const sel = dd.querySelector("select");
   const changed = sel.value !== opt.dataset.value;
   sel.value = opt.dataset.value;
-  dd.querySelector(".dd-btn span").textContent = opt.textContent;
+  dd.querySelector(".dd-btn span").textContent = sel.selectedOptions[0]?.dataset.short || opt.textContent;
   closeDropdowns();
   dd.querySelector(".dd-btn").focus({ preventScroll: true });
   if (changed) sel.dispatchEvent(new Event("change", { bubbles: true }));
@@ -3458,7 +3458,8 @@ async function animateDateIntoDetails(date) {
   ghost.className = "date-morph-layer week-ghost";
   ghost.setAttribute("aria-hidden", "true");
   const weekTop = Math.min(...week.map(d => grid.querySelector(`[data-date="${d}"] .day-num`)?.getBoundingClientRect().top ?? Infinity));
-  grid.querySelectorAll(".day-num, .weekday, .dot.on").forEach(el => {
+  const weekdays = Array.from(grid.querySelectorAll(".weekday"), el => el.getBoundingClientRect());
+  grid.querySelectorAll(".day-num, .dot.on").forEach(el => {
     const r = el.getBoundingClientRect();
     const cell = el.closest("[data-date]");
     if (el.classList.contains("day-num") && week.includes(cell?.dataset.date)) {
@@ -3502,7 +3503,12 @@ async function animateDateIntoDetails(date) {
         // 다른 달 날짜는 달력에 없으므로 제자리에서 나타난다
         anims.push(num.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, delay: 220, easing: "ease-out", fill: "backwards" }));
       }
-      anims.push(cell.querySelector(".day-week-wd").animate([{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }], { duration: 300, delay: 260, easing: "ease-out", fill: "backwards" }));
+      const wd = cell.querySelector(".day-week-wd");
+      const wdFrom = weekdays[Array.prototype.indexOf.call(strip.children, cell)];
+      if (wdFrom) {
+        const to = wd.getBoundingClientRect();
+        anims.push(wd.animate([{ transform: `translate(${wdFrom.left + wdFrom.width / 2 - (to.left + to.width / 2)}px,${wdFrom.top + wdFrom.height / 2 - (to.top + to.height / 2)}px)` }, { transform: "none" }], { duration: 480, easing: ease }));
+      }
     });
     if (box) anims.push(box.animate([{ opacity: 0, transform: "translateY(28px)" }, { opacity: 1, transform: "none" }], { duration: 420, delay: 220, easing: ease, fill: "backwards" }));
     await Promise.all(anims.map(a => a.finished.catch(() => {})));
