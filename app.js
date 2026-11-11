@@ -4039,9 +4039,19 @@ function navigateMobileTab(hash) {
   navigate(hash);
 }
 
+// 탭이 바뀌었는지 보려고 마지막 화면 이름을 기억 (출·퇴근의 날짜 주소는 출·퇴근과 같은 탭)
+const tabOf = (name) => (name === "day" ? "calendar" : name);
+let lastTab = null;
+setTimeout(() => { lastTab ??= tabOf(route().name); }, 0);
 window.addEventListener("hashchange", () => {
   const wasDay = !!app.querySelector(".day-page");
   const nextPage = route().name;
+  // 다른 탭으로 옮기면 맨 위부터, 출·퇴근으로 돌아오면 오늘 · 주간 화면부터
+  if (lastTab !== null && tabOf(nextPage) !== lastTab) {
+    window.scrollTo({ top: 0 });
+    if (tabOf(nextPage) === "calendar") Object.assign(state, { calDay: null, calRoute: null, monthOpen: false, yearView: false, activeYm: null, kcHeaderYm: null });
+  }
+  lastTab = tabOf(nextPage);
   const smoothDay = !isDesktop() && !reducedMotion() &&
     ((nextPage === "day" && !!app.querySelector(".admin-cal")) || (wasDay && nextPage === "calendar"));
   if (!tour?.nav) endTour(); // 튜토리얼이 화면을 바꾸는 중이면 끄지 않는다
